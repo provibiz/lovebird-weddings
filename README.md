@@ -94,11 +94,19 @@ Button-Link beginnt mit `/` oder `https://`, SEO-Titel ≤ 60, Meta-Description
 
 1. Repository mit Cloudflare Pages verbinden.
 2. **Build command:** `npm run build` · **Output directory:** `dist`
-3. Unter *Settings → Variables and Secrets* alle Variablen aus `.env.example`
+3. **Settings → Functions → Compatibility flags:** für *Production* **und**
+   *Preview* jeweils `nodejs_compat` setzen (nötig für das Cosmic-SDK).
+   Compatibility date z. B. `2025-06-01`.
+4. **Settings → Variables and Secrets:** alle Variablen aus `.env.example`
    eintragen (`COSMIC_WRITE_KEY`, `ADMIN_PASSWORD`, `SESSION_SECRET` als *Secret*).
-4. `compatibility_flags = ["nodejs_compat"]` ist in `wrangler.jsonc` gesetzt.
+   Nach jeder Änderung **neu deployen**, damit sie greifen.
 5. Optional: *Deploy Hook* anlegen und als `CLOUDFLARE_DEPLOY_HOOK_URL`
    hinterlegen – dann veröffentlicht das Dashboard nach dem Speichern neu.
+
+> **Wichtig:** Dieses Projekt enthält bewusst **keine** `wrangler.toml`/`.jsonc`.
+> Sobald eine Wrangler-Konfigurationsdatei vorhanden ist, ignoriert Cloudflare
+> Pages die im Dashboard gesetzten Environment-Variablen. Deshalb werden
+> Kompatibilitäts-Flags und Variablen ausschließlich im Dashboard gepflegt.
 
 ## Rechtliches
 
