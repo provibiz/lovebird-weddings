@@ -1,0 +1,18 @@
+---
+interface Props { name: string; value?: string; label?: string }
+const { name, value = '', label } = Astro.props;
+---
+<div class="field" data-field={name}>
+  {label && <label>{label}</label>}
+  <div class="imgpick" data-imgpick>
+    <div class="imgpick-preview" data-imgpick-preview>
+      {value ? <img src={value} alt="" /> : <span class="imgpick-empty">Kein Bild</span>}
+    </div>
+    <div class="imgpick-actions">
+      <button type="button" class="btn-add" data-imgpick-open>Bild wählen</button>
+      <button type="button" class="imgpick-clear" data-imgpick-clear hidden={!value}>Entfernen</button>
+    </div>
+    <input type="hidden" name={name} value={value} data-imgpick-input />
+  </div>
+  <span class="err"></span>
+</div>

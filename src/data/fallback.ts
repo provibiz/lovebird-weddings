@@ -38,6 +38,31 @@ export const fallbackContent: SiteContent = {
       hero_image: '/assets/images/hero.jpg',
       cta_text: 'Anfrage stellen',
       cta_link: '/kontakt',
+      about_title: 'Gemeinsam schaffen wir *Erinnerungen*.',
+      about_text:
+        '<p>Mein Name ist Sarah, ich bin 27 Jahre alt und seit zwei Jahren glücklich verheiratet. Schon immer begleitet mich, neben ganz viel Herz und Empathie, mein Planungstalent und meine Detailverliebtheit.</p><p>Nach meiner eigenen Traumhochzeit durfte ich bereits bei vielen einzigartigen Veranstaltungen mitwirken. Mit Sitz zwischen Halle (Saale) und Leipzig konzipiere und realisiere ich individuelle und einzigartige Events – von der anfänglichen Planung bis zur Auswahl des perfekten Konzepts stehe ich euch zur Seite.</p>',
+      about_image_1: '/assets/images/img_028_5a661839.jpg',
+      about_image_2: '/assets/images/img_026_55fad26d.jpg',
+      teasers: [
+        {
+          num: 'I — Komplettplanung',
+          title: 'Individuelle Planung',
+          image: '/assets/images/img_040_77bd4476.jpg',
+          text: '<p>Jede Hochzeit ist so einzigartig wie das Paar, das sie feiert. Wir kümmern uns um jedes Detail – von der Auswahl der Location bis zur perfekten Blumendeko – damit ihr entspannt die Vorfreude genießen könnt.</p>',
+        },
+        {
+          num: 'II — Am großen Tag',
+          title: 'Wedding Day Manager',
+          image: '/assets/images/img_070_decb5f25.jpg',
+          text: '<p>Eure Hochzeit ist geplant und ihr möchtet am großen Tag nichts dem Zufall überlassen? Wir koordinieren alle Abläufe, betreuen Dienstleister und lösen kleine Herausforderungen im Hintergrund.</p>',
+        },
+        {
+          num: 'III — Detailliebe',
+          title: 'Eventpapeterie',
+          image: '/assets/images/img_055_a41e12aa.jpg',
+          text: '<p>Eure Hochzeit beginnt mit der Einladung, die eure Gäste in Händen halten. Stilvolle Save-the-Date-Karten, Einladungen, Menükarten und Sitzpläne – harmonisch auf euer Konzept abgestimmt.</p>',
+        },
+      ],
     },
     leistungen: {
       title: 'Leistungen',
@@ -171,5 +196,23 @@ export const fallbackContent: SiteContent = {
       rating: 5,
       source: 'Google',
     },
+  ],
+
+  portfolio: [
+    { slug: 'kirsten-toni', date: 'Aug 2025', name: 'Kirsten & Toni', subtitle: 'Bordeaux-Farbtöne auf dem Reiterhof', image: '/assets/images/img_034_6658439a.jpg' },
+    { slug: 'michelle-david', date: 'Aug 2025', name: 'Michelle & David', subtitle: 'Kirchliche Trauung im Duisburger Innenhafen', image: '/assets/images/img_071_ded3d110.jpg' },
+    { slug: 'lisa-kenny', date: 'Apr 2025', name: 'Lisa & Kenny', subtitle: 'Rosttöne auf dem Weingut · Brunnenhaus', image: '/assets/images/img_019_453faeab.jpg' },
+    { slug: 'sally-jens', date: 'Mär 2025', name: 'Sally & Jens', subtitle: 'Espresso Martini im Glashaus', image: '/assets/images/img_024_4cdc1c31.jpg' },
+    { slug: 'lisa-alexander', date: 'Mär 2025', name: 'Lisa & Alexander', subtitle: 'Schlosshochzeit im Frühling', image: '/assets/images/img_042_7cba3860.jpg' },
+    { slug: 'carolin-joerg', date: 'Sept 2024', name: 'Carolin & Jörg', subtitle: 'Industrial Wedding mit Kräuterduft', image: '/assets/images/img_027_56aa8d6e.jpg' },
+    { slug: 'johanna-david', date: 'Aug 2024', name: 'Johanna & David', subtitle: 'Romantische Klosterhochzeit', image: '/assets/images/img_064_c5c55911.jpg' },
+    { slug: 'taiza-christopher', date: 'Aug 2024', name: 'Taiza & Christopher', subtitle: 'Deutsch-Brasilianische Feier der Liebe', image: '/assets/images/img_007_16bc9b57.jpg' },
+    { slug: 'jacqueline-nico', date: 'Jul 2024', name: 'Jacqueline & Nico', subtitle: 'Scheunenhochzeit und Partystimmung', image: '/assets/images/img_033_6215f113.jpg' },
+    { slug: 'thea-romano', date: 'Jul 2024', name: 'Thea & Romano', subtitle: 'Greenery Wedding', image: '/assets/images/img_010_2391920f.jpg' },
+    { slug: 'larissa-sebastian', date: 'Mai 2024', name: 'Larissa & Sebastian', subtitle: 'Sommerhochzeit in Pastell', image: '/assets/images/img_004_130427fb.jpg' },
+    { slug: 'lisa-clemens', date: 'Mai 2024', name: 'Lisa & Clemens', subtitle: 'White Wedding im Jagdschloss', image: '/assets/images/img_076_f64976e5.jpg' },
+    { slug: 'annemarie-fabian', date: 'Apr 2024', name: 'Anne-Marie & Fabian', subtitle: 'Ostseehochzeit', image: '/assets/images/img_006_1617988c.jpg' },
+    { slug: 'jenny-nils', date: 'Mai 2023', name: 'Jenny & Nils', subtitle: 'Scheunenhochzeit in Familie', image: '/assets/images/img_002_06e89c51.jpg' },
+    { slug: 'sarah-stefan', date: 'Jul 2022', name: 'Sarah & Stefan', subtitle: 'Unsere Traumhochzeit', image: '/assets/images/img_067_ced7b4e0.jpg' },
   ],
 };

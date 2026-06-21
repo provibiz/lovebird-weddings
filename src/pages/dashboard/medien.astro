@@ -1,0 +1,77 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { isCosmicConfigured } from '@/lib/cosmic';
+export const prerender = false;
+const cosmicConfigured = isCosmicConfigured();
+---
+<DashboardLayout title="Medien" active="medien" cosmicConfigured={cosmicConfigured}>
+  <h1>Medien</h1>
+  <p class="lead">Bilder hochladen, ansehen und eigene Uploads löschen. Die mitgelieferten Bestandsbilder bleiben erhalten.</p>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
+      <label class="btn-save" style="cursor:pointer">
+        Bild hochladen
+        <input type="file" accept="image/*" data-upload hidden />
+      </label>
+      <span class="status" data-status></span>
+    </div>
+    <div class="media-manage" data-manage-grid></div>
+  </div>
+</DashboardLayout>
+
+<script>
+  const grid = document.querySelector<HTMLElement>('[data-manage-grid]');
+  const status = document.querySelector<HTMLElement>('[data-status]');
+  const upload = document.querySelector<HTMLInputElement>('[data-upload]');
+
+  function setStatus(msg: string, kind = '') {
+    if (status) { status.textContent = msg; status.className = `status ${kind}`; }
+  }
+
+  async function load() {
+    if (!grid) return;
+    grid.innerHTML = '';
+    const res = await fetch('/api/media');
+    const j = await res.json();
+    if (!j.ok) { setStatus(j.error ?? 'Fehler beim Laden.', 'error'); return; }
+    j.items.forEach((it: any) => {
+      const card = document.createElement('div');
+      card.className = 'media-card';
+      card.innerHTML = `<img src="${it.url}" alt="" loading="lazy">
+        <span class="tag">${it.stock ? 'Bestand' : 'Upload'}</span>
+        ${it.stock ? '' : `<button type="button" class="del" title="Löschen" data-del="${it.id}">🗑</button>`}`;
+      grid.appendChild(card);
+    });
+  }
+
+  grid?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-del]');
+    if (!btn) return;
+    if (!confirm('Dieses Bild wirklich löschen?')) return;
+    setStatus('Lösche…');
+    const res = await fetch('/api/media', {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: btn.dataset.del }),
+    });
+    const j = await res.json();
+    if (j.ok) { setStatus('Gelöscht.', 'ok'); load(); }
+    else setStatus(j.error ?? 'Löschen fehlgeschlagen.', 'error');
+  });
+
+  upload?.addEventListener('change', async () => {
+    const file = upload.files?.[0];
+    if (!file) return;
+    setStatus('Lädt hoch…');
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/media', { method: 'POST', body: fd });
+    const j = await res.json();
+    upload.value = '';
+    if (j.ok) { setStatus('Hochgeladen.', 'ok'); load(); }
+    else setStatus(j.error ?? 'Upload fehlgeschlagen.', 'error');
+  });
+
+  load();
+</script>
