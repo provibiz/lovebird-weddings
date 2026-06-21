@@ -21,13 +21,13 @@ const page = content.pages.index;
 >
   <Hero page={page} />
   <Marquee />
-  <ServicesSection />
+  <ServicesSection teasers={page.teasers ?? []} />
   <Quote
     mark
     quote="Wir hatten das große Glück, Sarah als unsere Hochzeitsplanerin zu engagieren – das war die beste Entscheidung, die wir getroffen haben."
     cite="— Thea & Romano"
   />
-  <AboutSection />
+  <AboutSection page={page} />
   <TestimonialsSection testimonials={content.testimonials} />
   <ContactSection settings={content.site_settings} />
 </BaseLayout>

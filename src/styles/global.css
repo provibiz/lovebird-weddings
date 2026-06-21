@@ -307,3 +307,14 @@ footer{background:#14110e;color:var(--ivory);padding:80px 24px 40px}
 .center{text-align:center}
 .mt-lg{margin-top:60px}
 
+
+/* rich-text (dashboard-formatted content) */
+.rt > :first-child{margin-top:0}
+.rt > :last-child{margin-bottom:0}
+.rt p{margin:0 0 1em}
+.rt ul,.rt ol{margin:0 0 1em 1.2em;padding:0}
+.rt li{margin:.2em 0}
+.rt a{color:var(--gold);border-bottom:1px solid var(--gold)}
+.rt strong,.rt b{font-weight:600}
+.service .body .rt{flex:1}
+.hero .lead.rt p{margin-bottom:1em}

@@ -1,0 +1,107 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import ImagePicker from '@/components/dashboard/ImagePicker.astro';
+import { getContent, isCosmicConfigured } from '@/lib/cosmic';
+export const prerender = false;
+
+const content = await getContent();
+const items = content.portfolio;
+const cosmicConfigured = isCosmicConfigured();
+---
+<DashboardLayout title="Portfolio" active="portfolio" cosmicConfigured={cosmicConfigured}>
+  <h1>Portfolio</h1>
+  <p class="lead">Eure Hochzeiten/Projekte. Du kannst Einträge hinzufügen, entfernen und je ein Bild wählen.</p>
+
+  <form class="card" data-save-form data-section="portfolio">
+    <h2>Projekte</h2>
+    <p class="desc">Reihenfolge = Anzeige auf der Portfolio-Seite (neueste zuerst empfohlen).</p>
+
+    <div data-repeat-list>
+      {items.map((it, i) => (
+        <div class="repeat-item" data-repeat-item>
+          <button type="button" class="remove" data-remove aria-label="Entfernen">×</button>
+          <div class="row">
+            <div class="field" data-field={`items.${i}.name`}>
+              <label>Brautpaar / Titel *</label>
+              <input name={`items[${i}][name]`} type="text" required value={it.name} />
+              <span class="err"></span>
+            </div>
+            <div class="field" data-field={`items.${i}.date`}>
+              <label>Datum</label>
+              <input name={`items[${i}][date]`} type="text" value={it.date} placeholder="z. B. Aug 2025" />
+              <span class="err"></span>
+            </div>
+          </div>
+          <div class="field" data-field={`items.${i}.subtitle`}>
+            <label>Untertitel</label>
+            <input name={`items[${i}][subtitle]`} type="text" value={it.subtitle} />
+            <span class="err"></span>
+          </div>
+          <ImagePicker name={`items[${i}][image]`} value={it.image} label="Bild" />
+        </div>
+      ))}
+    </div>
+
+    <button type="button" class="btn-add" data-add-item>+ Projekt hinzufügen</button>
+
+    <div class="save-bar" style="margin-top:22px">
+      <button type="submit" class="btn-save">Speichern</button>
+      <span class="status" data-status></span>
+      <a class="preview-link" href="/portfolio" target="_blank">Vorschau ↗</a>
+    </div>
+  </form>
+</DashboardLayout>
+
+<script>
+  function pickerMarkup(name: string) {
+    return `
+      <div class="field" data-field="${name}">
+        <label>Bild</label>
+        <div class="imgpick" data-imgpick>
+          <div class="imgpick-preview" data-imgpick-preview><span class="imgpick-empty">Kein Bild</span></div>
+          <div class="imgpick-actions">
+            <button type="button" class="btn-add" data-imgpick-open>Bild wählen</button>
+            <button type="button" class="imgpick-clear" data-imgpick-clear hidden>Entfernen</button>
+          </div>
+          <input type="hidden" name="${name}" value="" data-imgpick-input />
+        </div>
+        <span class="err"></span>
+      </div>`;
+  }
+  function reindex(list: HTMLElement) {
+    list.querySelectorAll<HTMLElement>('[data-repeat-item]').forEach((item, i) => {
+      item.querySelectorAll<HTMLElement>('[name]').forEach((el) => {
+        (el as HTMLInputElement).name = (el as HTMLInputElement).name.replace(/^items\[\d+\]/, `items[${i}]`);
+      });
+      item.querySelectorAll<HTMLElement>('[data-field]').forEach((el) => {
+        el.setAttribute('data-field', el.getAttribute('data-field')!.replace(/^items\.\d+\./, `items.${i}.`));
+      });
+    });
+  }
+  document.querySelectorAll<HTMLElement>('[data-repeat-list]').forEach((list) => {
+    const add = list.parentElement?.querySelector('[data-add-item]');
+    add?.addEventListener('click', () => {
+      const i = list.querySelectorAll('[data-repeat-item]').length;
+      const tpl = document.createElement('div');
+      tpl.className = 'repeat-item';
+      tpl.setAttribute('data-repeat-item', '');
+      tpl.innerHTML = `
+        <button type="button" class="remove" data-remove aria-label="Entfernen">×</button>
+        <div class="row">
+          <div class="field" data-field="items.${i}.name"><label>Brautpaar / Titel *</label><input name="items[${i}][name]" type="text" required /><span class="err"></span></div>
+          <div class="field" data-field="items.${i}.date"><label>Datum</label><input name="items[${i}][date]" type="text" placeholder="z. B. Aug 2025" /><span class="err"></span></div>
+        </div>
+        <div class="field" data-field="items.${i}.subtitle"><label>Untertitel</label><input name="items[${i}][subtitle]" type="text" /><span class="err"></span></div>
+        ${pickerMarkup(`items[${i}][image]`)}`;
+      list.appendChild(tpl);
+      (window as any).__initImgPick?.(tpl);
+    });
+    list.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.hasAttribute('data-remove')) {
+        t.closest('[data-repeat-item]')?.remove();
+        reindex(list);
+      }
+    });
+  });
+</script>

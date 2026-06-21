@@ -1,25 +1,8 @@
 ---
-// Home-page service teasers — presentational, mirrors the approved template.
-const teasers = [
-  {
-    num: 'I — Komplettplanung',
-    title: 'Individuelle Planung',
-    img: '/assets/images/img_040_77bd4476.jpg',
-    text: 'Jede Hochzeit ist so einzigartig wie das Paar, das sie feiert. Wir kümmern uns um jedes Detail – von der Auswahl der Location bis zur perfekten Blumendeko – damit ihr entspannt die Vorfreude genießen könnt.',
-  },
-  {
-    num: 'II — Am großen Tag',
-    title: 'Wedding Day Manager',
-    img: '/assets/images/img_070_decb5f25.jpg',
-    text: 'Eure Hochzeit ist geplant und ihr möchtet am großen Tag nichts dem Zufall überlassen? Wir koordinieren alle Abläufe, betreuen Dienstleister und lösen kleine Herausforderungen im Hintergrund.',
-  },
-  {
-    num: 'III — Detailliebe',
-    title: 'Eventpapeterie',
-    img: '/assets/images/img_055_a41e12aa.jpg',
-    text: 'Eure Hochzeit beginnt mit der Einladung, die eure Gäste in Händen halten. Stilvolle Save-the-Date-Karten, Einladungen, Menükarten und Sitzpläne – harmonisch auf euer Konzept abgestimmt.',
-  },
-];
+import type { HomeTeaser } from '@/lib/types';
+import { sanitizeHtml } from '@/lib/sanitize';
+interface Props { teasers: HomeTeaser[] }
+const { teasers } = Astro.props;
 ---
 <section>
   <div class="section-head reveal">
@@ -31,11 +14,11 @@ const teasers = [
   <div class="services">
     {teasers.map((s) => (
       <article class="service reveal">
-        <div class="img"><img src={s.img} loading="lazy" alt={s.title} /></div>
+        <div class="img"><img src={s.image} loading="lazy" alt={s.title} /></div>
         <div class="body">
           <div class="num">{s.num}</div>
           <h3>{s.title}</h3>
-          <p>{s.text}</p>
+          <div class="rt" set:html={sanitizeHtml(s.text)}></div>
           <a href="/leistungen" class="more">Mehr erfahren</a>
         </div>
       </article>

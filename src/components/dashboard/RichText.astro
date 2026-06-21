@@ -1,0 +1,21 @@
+---
+import { sanitizeHtml } from '@/lib/sanitize';
+interface Props { name: string; value?: string; label?: string }
+const { name, value = '', label } = Astro.props;
+const html = sanitizeHtml(value);
+---
+<div class="field" data-field={name}>
+  {label && <label>{label}</label>}
+  <div class="rte" data-rte>
+    <div class="rte-toolbar">
+      <button type="button" data-cmd="bold" title="Fett"><b>B</b></button>
+      <button type="button" data-cmd="italic" title="Kursiv"><i>I</i></button>
+      <button type="button" data-cmd="insertUnorderedList" title="Liste">• Liste</button>
+      <button type="button" data-cmd="createLink" title="Link">🔗 Link</button>
+      <button type="button" data-cmd="unlink" title="Link entfernen">✕ Link</button>
+    </div>
+    <div class="rte-area" contenteditable="true" data-rte-area set:html={html}></div>
+    <textarea name={name} data-rte-input hidden set:html={html}></textarea>
+  </div>
+  <span class="err"></span>
+</div>

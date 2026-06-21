@@ -1,5 +1,6 @@
 ---
 import type { PageContent } from '@/lib/types';
+import { sanitizeHtml } from '@/lib/sanitize';
 interface Props { page: PageContent }
 const { page } = Astro.props;
 
@@ -7,6 +8,7 @@ const { page } = Astro.props;
 // match the approved template.
 const lines = page.hero_title.split('\n');
 const heroImage = page.hero_image ?? '/assets/images/hero.jpg';
+const heroTextHtml = sanitizeHtml(page.hero_text);
 ---
 <section class="hero">
   <div class="hero-bg">
@@ -31,7 +33,7 @@ const heroImage = page.hero_image ?? '/assets/images/hero.jpg';
             )
           )}
         </h1>
-        <p class="lead">{page.hero_text}</p>
+        <div class="lead rt" set:html={heroTextHtml}></div>
         <div class="hero-meta">
           <a href={page.cta_link ?? '/kontakt'} class="cta cta-solid">{page.cta_text ?? 'Anfrage stellen'}</a>
           <a href="/portfolio" class="cta">Portfolio ansehen</a>

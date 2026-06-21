@@ -67,24 +67,39 @@ Object Types im Cosmic-Bucket (Metadata-Felder):
 - **pages** (slug = `index|leistungen|portfolio|brunnenhaus|kontakt`):
   `seo_title`, `seo_description`, `hero_title`, `hero_text`, `hero_image`,
   `cta_text`, `cta_link`
+  Startseite zusätzlich: `about_title`, `about_text`, `about_image_1/2`,
+  `teasers` (Liste mit `num`, `title`, `text`, `image`)
 - **services**: `title`, `short_description`, `description`, `benefits`, `cta_text`
+- **portfolio**: `name`, `date`, `subtitle`, `image`
 - **faqs**: `question`, `answer`
 - **testimonials**: `name`, `text`, `rating`, `source`
+- **Medien**: über die Cosmic Media Library (Uploads der Kundin)
 
 Solange ein Type leer/nicht vorhanden ist, greift automatisch der Fallback.
+Bilder können lokale Bestandsbilder (`/assets/images/…`) oder Cosmic-Media-URLs sein.
 
 ## Kunden-Dashboard
 
 Erreichbar unter `/dashboard` (Login `/dashboard/login`). Bearbeitbar:
 
-- **Startseite** – Hero-Überschrift, Text, Button-Text/-Link
+- **Startseite** – Hero (Überschrift, Text, Button, Bild), Über mich (Text + 2 Bilder),
+  3 Leistungs-Teaser (Titel, Text, Bild)
 - **Leistungen** – Titel & Beschreibungen (hinzufügen/entfernen)
+- **Portfolio** – Projekte (Brautpaar, Datum, Untertitel, Bild; hinzufügen/entfernen)
 - **FAQ** – Fragen & Antworten
+- **Medien** – Bilder hochladen, ansehen, eigene Uploads löschen
 - **Kontaktdaten** – Firma, Telefon, E-Mail, Standort, Instagram
 - **SEO** – Seitentitel (≤ 60) & Meta-Beschreibung (≤ 160) je Seite
 
+Textfelder (Einleitung, Über mich, Leistungs-/Teaser-Texte) haben einen einfachen
+**Rich-Text-Editor** (fett, kursiv, Listen, Links). Die Ausgabe wird serverseitig
+**bereinigt** (`lib/sanitize.ts`) – nur eine kleine Tag-Whitelist ist erlaubt.
+
 Bewusst **nicht** editierbar: Layout, Farben, Schriftarten, Komponentenstruktur,
 CSS, Canonical, Robots, Schema.org und sonstige technische Einstellungen.
+
+> Hinweis: Da die öffentliche Seite statisch ist, erscheinen Änderungen erst nach
+> einem Rebuild (Deploy-Hook `CLOUDFLARE_DEPLOY_HOOK_URL` → „Speichern" stößt ihn an).
 
 Validierung (Zod, server- und clientseitig): Pflichtfeld Hauptüberschrift,
 Button-Link beginnt mit `/` oder `https://`, SEO-Titel ≤ 60, Meta-Description

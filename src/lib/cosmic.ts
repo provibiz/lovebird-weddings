@@ -1,4 +1,6 @@
 import { fallbackContent } from '@/data/fallback';
+import { sanitizeHtml } from '@/lib/sanitize';
+import { stockImages } from '@/data/stock-images';
 import type {
   SiteContent,
   SiteSettings,
@@ -6,6 +8,8 @@ import type {
   Faq,
   Testimonial,
   PageContent,
+  PortfolioItem,
+  MediaItem,
 } from '@/lib/types';
 
 // ── Environment ────────────────────────────────────────────────
@@ -101,6 +105,10 @@ function mapTestimonial(obj: CosmicObject): Testimonial {
   };
 }
 
+function img(v: any): string | undefined {
+  return v?.url ?? v ?? undefined;
+}
+
 function mapPage(obj: CosmicObject): PageContent {
   const m = obj.metadata ?? {};
   return {
@@ -110,7 +118,32 @@ function mapPage(obj: CosmicObject): PageContent {
     seo_description: m.seo_description ?? '',
     hero_title: m.hero_title ?? '',
     hero_text: m.hero_text ?? '',
-    hero_image: m.hero_image?.url ?? m.hero_image ?? undefined,
+    hero_image: img(m.hero_image),
+    cta_text: m.cta_text ?? undefined,
+    cta_link: m.cta_link ?? undefined,
+    about_title: m.about_title ?? undefined,
+    about_text: m.about_text ?? undefined,
+    about_image_1: img(m.about_image_1),
+    about_image_2: img(m.about_image_2),
+    teasers: Array.isArray(m.teasers)
+      ? m.teasers.map((t: any) => ({
+          num: t.num ?? '',
+          title: t.title ?? '',
+          text: t.text ?? '',
+          image: img(t.image) ?? '',
+        }))
+      : undefined,
+  };
+}
+
+function mapPortfolioItem(obj: CosmicObject): PortfolioItem {
+  const m = obj.metadata ?? {};
+  return {
+    slug: obj.slug ?? '',
+    date: m.date ?? '',
+    name: m.name ?? obj.title ?? '',
+    subtitle: m.subtitle ?? '',
+    image: img(m.image) ?? '',
   };
 }
 
@@ -155,9 +188,20 @@ export async function persistSection(
     case 'startseite': {
       await upsertObject(client, 'pages', 'index', 'Startseite', {
         hero_title: data.hero_title,
-        hero_text: data.hero_text,
+        hero_text: sanitizeHtml(data.hero_text),
         cta_text: data.cta_text,
         cta_link: data.cta_link,
+        hero_image: data.hero_image,
+        about_title: data.about_title,
+        about_text: sanitizeHtml(data.about_text),
+        about_image_1: data.about_image_1,
+        about_image_2: data.about_image_2,
+        teasers: (data.teasers ?? []).map((t: any) => ({
+          num: t.num ?? '',
+          title: t.title ?? '',
+          text: sanitizeHtml(t.text ?? ''),
+          image: t.image ?? '',
+        })),
       });
       break;
     }
@@ -197,8 +241,8 @@ export async function persistSection(
         const slug = slugify(svc.title);
         await upsertObject(client, 'services', slug, svc.title, {
           title: svc.title,
-          description: svc.description,
-          short_description: svc.short_description ?? svc.description,
+          description: sanitizeHtml(svc.description),
+          short_description: svc.short_description ?? '',
         });
       }
       break;
@@ -227,9 +271,91 @@ export async function persistSection(
       }
       break;
     }
+    case 'portfolio': {
+      const existing = await client.objects
+        .find({ type: 'portfolio' })
+        .props('id,slug')
+        .catch(() => ({ objects: [] }));
+      const existingObjs: Array<{ id: string; slug: string }> = (existing as any)?.objects ?? [];
+      const usedSlugs = new Set<string>();
+      for (let i = 0; i < data.items.length; i++) {
+        const it = data.items[i];
+        const slug = `projekt-${i + 1}`;
+        usedSlugs.add(slug);
+        await upsertObject(client, 'portfolio', slug, it.name, {
+          name: it.name,
+          date: it.date ?? '',
+          subtitle: it.subtitle ?? '',
+          image: it.image ?? '',
+        });
+      }
+      for (const obj of existingObjs) {
+        if (!usedSlugs.has(obj.slug)) {
+          await client.objects.deleteOne(obj.id).catch(() => {});
+        }
+      }
+      break;
+    }
     default:
       throw new Error(`Unbekannter Bereich: ${section}`);
   }
+}
+
+// ── Media library (Cosmic Media API, server-side only) ─────────
+
+/** Lists stock images (bundled) + Cosmic media (uploaded). */
+export async function listMedia(creds?: WriteCreds): Promise<MediaItem[]> {
+  const stock: MediaItem[] = stockImages.map((url) => ({
+    id: url,
+    name: url.split('/').pop() ?? url,
+    url,
+    stock: true,
+  }));
+
+  if (!isCosmicConfigured()) return stock;
+  try {
+    const c = await readClient();
+    const res = await c.media.find({}).props('id,name,url,imgix_url').limit(100).catch(() => null);
+    const uploaded: MediaItem[] = ((res as any)?.media ?? []).map((m: any) => ({
+      id: m.id ?? m.name,
+      name: m.original_name ?? m.name,
+      url: m.imgix_url ?? m.url,
+      stock: false,
+    }));
+    return [...uploaded, ...stock];
+  } catch {
+    return stock;
+  }
+}
+
+export async function uploadMedia(
+  file: { buffer: ArrayBuffer; name: string; type: string },
+  creds?: WriteCreds
+): Promise<MediaItem> {
+  const client = await writeClient(creds);
+  const media_object = {
+    originalname: file.name,
+    buffer: new Uint8Array(file.buffer),
+    type: file.type,
+  };
+  const res = await client.media.insertOne({ media: media_object as any });
+  const m = (res as any)?.media ?? {};
+  return { id: m.id ?? m.name, name: m.original_name ?? m.name, url: m.imgix_url ?? m.url, stock: false };
+}
+
+export async function deleteMedia(id: string, creds?: WriteCreds): Promise<void> {
+  const client = await writeClient(creds);
+  // Cosmic deletes media by file name; resolve id → name if needed.
+  let name = id;
+  try {
+    const c = await readClient();
+    const res = await c.media.find({}).props('id,name').limit(100).catch(() => null);
+    const found = ((res as any)?.media ?? []).find((m: any) => m.id === id || m.name === id);
+    if (found) name = found.name;
+  } catch {
+    /* fall back to the given id */
+  }
+  await client.media.deleteOne(name);
 }
 
 /** Optionally trigger a Cloudflare Pages rebuild via a Deploy Hook. */
@@ -260,24 +386,31 @@ export async function getContent(): Promise<SiteContent> {
 
   try {
     const c = await readClient();
-    const [settings, services, faqs, testimonials, pages] = await Promise.all([
+    const [settings, services, faqs, testimonials, pages, portfolio] = await Promise.all([
       c.objects.findOne({ type: 'site_settings' }).props('slug,title,metadata').catch(() => null),
       c.objects.find({ type: 'services' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
       c.objects.find({ type: 'faqs' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
       c.objects.find({ type: 'testimonials' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
       c.objects.find({ type: 'pages' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
+      c.objects.find({ type: 'portfolio' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
     ]);
 
     const pageList: CosmicObject[] = (pages as any)?.objects ?? [];
     const pageMap: Record<string, PageContent> = { ...fallbackContent.pages };
     for (const p of pageList) {
       const mapped = mapPage(p);
-      if (mapped.slug) pageMap[mapped.slug] = { ...fallbackContent.pages[mapped.slug], ...mapped };
+      if (!mapped.slug) continue;
+      // Only override fallback with keys that Cosmic actually provided, so a
+      // page edited via the dashboard (e.g. only hero fields) keeps the rest.
+      const defined: Record<string, any> = {};
+      for (const [k, v] of Object.entries(mapped)) if (v !== undefined) defined[k] = v;
+      pageMap[mapped.slug] = { ...fallbackContent.pages[mapped.slug], ...defined } as PageContent;
     }
 
     const serviceList: CosmicObject[] = (services as any)?.objects ?? [];
     const faqList: CosmicObject[] = (faqs as any)?.objects ?? [];
     const testimonialList: CosmicObject[] = (testimonials as any)?.objects ?? [];
+    const portfolioList: CosmicObject[] = (portfolio as any)?.objects ?? [];
 
     cache = {
       site_settings: mapSettings((settings as any)?.object),
@@ -287,6 +420,9 @@ export async function getContent(): Promise<SiteContent> {
       testimonials: testimonialList.length
         ? testimonialList.map(mapTestimonial)
         : fallbackContent.testimonials,
+      portfolio: portfolioList.length
+        ? portfolioList.map(mapPortfolioItem)
+        : fallbackContent.portfolio,
     };
     return cache;
   } catch {

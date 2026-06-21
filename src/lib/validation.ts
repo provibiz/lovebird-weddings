@@ -17,11 +17,44 @@ const email = z.string().trim().email('Bitte eine gültige E-Mail-Adresse angebe
 
 // ── Per-section schemas (mirror the dashboard forms) ───────────
 
+const imagePath = z
+  .string()
+  .trim()
+  .refine((v) => v === '' || v.startsWith('/') || v.startsWith('https://'), {
+    message: 'Bildpfad muss mit „/" oder „https://" beginnen.',
+  });
+
+const teaserSchema = z.object({
+  num: z.string().trim().optional().default(''),
+  title: z.string().trim().min(1, 'Teaser-Titel darf nicht leer sein.'),
+  text: z.string().trim().min(1, 'Teaser-Text darf nicht leer sein.'),
+  image: imagePath,
+});
+
 export const startseiteSchema = z.object({
   hero_title: z.string().trim().min(1, 'Die Hauptüberschrift ist ein Pflichtfeld.'),
   hero_text: z.string().trim().min(1, 'Der Hero-Text darf nicht leer sein.'),
   cta_text: z.string().trim().min(1, 'Der Button-Text darf nicht leer sein.'),
   cta_link: buttonLink,
+  hero_image: imagePath,
+  about_title: z.string().trim().min(1, 'Die Über-mich-Überschrift ist ein Pflichtfeld.'),
+  about_text: z.string().trim().min(1, 'Der Über-mich-Text darf nicht leer sein.'),
+  about_image_1: imagePath,
+  about_image_2: imagePath,
+  teasers: z.array(teaserSchema).optional().default([]),
+});
+
+export const portfolioSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1, 'Name darf nicht leer sein.'),
+        date: z.string().trim().optional().default(''),
+        subtitle: z.string().trim().optional().default(''),
+        image: imagePath,
+      })
+    )
+    .min(1, 'Mindestens ein Portfolio-Eintrag ist erforderlich.'),
 });
 
 export const seoSchema = z.object({
@@ -71,6 +104,7 @@ export const sectionSchemas = {
   leistungen: servicesSchema,
   faq: faqsSchema,
   kontakt: kontaktSchema,
+  portfolio: portfolioSchema,
 } as const;
 
 export type SectionKey = keyof typeof sectionSchemas;

@@ -7,7 +7,9 @@ const nav = [
   { href: '/dashboard', label: 'Dashboard', key: 'home' },
   { href: '/dashboard/startseite', label: 'Startseite', key: 'startseite' },
   { href: '/dashboard/leistungen', label: 'Leistungen', key: 'leistungen' },
+  { href: '/dashboard/portfolio', label: 'Portfolio', key: 'portfolio' },
   { href: '/dashboard/faq', label: 'FAQ', key: 'faq' },
+  { href: '/dashboard/medien', label: 'Medien', key: 'medien' },
   { href: '/dashboard/kontakt', label: 'Kontaktdaten', key: 'kontakt' },
   { href: '/dashboard/seo', label: 'SEO', key: 'seo' },
 ];
@@ -47,6 +49,22 @@ const nav = [
         )}
         <slot />
       </main>
+    </div>
+
+    <!-- Shared image picker modal -->
+    <div class="media-modal" data-media-modal hidden>
+      <div class="media-modal-card">
+        <header>
+          <strong>Bild wählen</strong>
+          <label class="btn-add" style="cursor:pointer">
+            + Hochladen
+            <input type="file" accept="image/*" data-media-upload hidden />
+          </label>
+          <button type="button" class="media-close" data-media-close aria-label="Schließen">✕</button>
+        </header>
+        <p class="media-status" data-media-status></p>
+        <div class="media-grid" data-media-grid></div>
+      </div>
     </div>
 
     <script>
@@ -97,6 +115,12 @@ const nav = [
         const btn = form.querySelector<HTMLButtonElement>('.btn-save');
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
+          // sync rich-text editors into their hidden textareas first
+          form.querySelectorAll<HTMLElement>('[data-rte]').forEach((rte) => {
+            const a = rte.querySelector<HTMLElement>('[data-rte-area]');
+            const i = rte.querySelector<HTMLTextAreaElement>('[data-rte-input]');
+            if (a && i) i.value = a.innerHTML;
+          });
           clearErrors(form);
           if (status) { status.textContent = ''; status.className = 'status'; }
           btn?.setAttribute('disabled', 'true');
@@ -134,6 +158,110 @@ const nav = [
         input.addEventListener('input', update);
         update();
       });
+
+      // ── Rich-text editors ───────────────────────────────────
+      function initRte(root: ParentNode = document) {
+        root.querySelectorAll<HTMLElement>('[data-rte]').forEach((rte) => {
+          if (rte.dataset.ready) return;
+          rte.dataset.ready = '1';
+          const area = rte.querySelector<HTMLElement>('[data-rte-area]')!;
+          const input = rte.querySelector<HTMLTextAreaElement>('[data-rte-input]')!;
+          const sync = () => (input.value = area.innerHTML);
+          area.addEventListener('input', sync);
+          area.addEventListener('blur', sync);
+          rte.querySelectorAll<HTMLButtonElement>('[data-cmd]').forEach((btn) => {
+            btn.addEventListener('mousedown', (e) => e.preventDefault());
+            btn.addEventListener('click', () => {
+              const cmd = btn.dataset.cmd!;
+              area.focus();
+              if (cmd === 'createLink') {
+                const url = prompt('Link-Adresse (https://… oder /seite):', 'https://');
+                if (url) document.execCommand('createLink', false, url);
+              } else {
+                document.execCommand(cmd, false);
+              }
+              sync();
+            });
+          });
+        });
+      }
+      (window as any).__initRte = initRte;
+      initRte();
+
+      // ── Image pickers + shared media modal ──────────────────
+      const modal = document.querySelector<HTMLElement>('[data-media-modal]');
+      const grid = modal?.querySelector<HTMLElement>('[data-media-grid]');
+      const mStatus = modal?.querySelector<HTMLElement>('[data-media-status]');
+      const uploadInput = modal?.querySelector<HTMLInputElement>('[data-media-upload]');
+      let activePicker: HTMLElement | null = null;
+      let mediaCache: any[] | null = null;
+
+      async function loadMedia(force = false) {
+        if (mediaCache && !force) return mediaCache;
+        if (mStatus) mStatus.textContent = 'Lädt…';
+        const res = await fetch('/api/media');
+        const j = await res.json();
+        if (mStatus) mStatus.textContent = '';
+        mediaCache = j.ok ? j.items : [];
+        return mediaCache!;
+      }
+      function renderGrid(items: any[]) {
+        if (!grid) return;
+        grid.innerHTML = '';
+        items.forEach((it) => {
+          const fig = document.createElement('button');
+          fig.type = 'button';
+          fig.className = 'media-thumb';
+          fig.innerHTML = `<img src="${it.url}" alt="" loading="lazy">`;
+          fig.addEventListener('click', () => choose(it.url));
+          grid!.appendChild(fig);
+        });
+      }
+      function choose(url: string) {
+        if (!activePicker) return;
+        activePicker.querySelector<HTMLInputElement>('[data-imgpick-input]')!.value = url;
+        const prev = activePicker.querySelector<HTMLElement>('[data-imgpick-preview]')!;
+        prev.innerHTML = `<img src="${url}" alt="">`;
+        activePicker.querySelector<HTMLElement>('[data-imgpick-clear]')?.removeAttribute('hidden');
+        closeModal();
+      }
+      function openModal(picker: HTMLElement) {
+        activePicker = picker;
+        modal?.removeAttribute('hidden');
+        loadMedia().then(renderGrid);
+      }
+      function closeModal() {
+        modal?.setAttribute('hidden', '');
+        activePicker = null;
+      }
+      modal?.querySelector('[data-media-close]')?.addEventListener('click', closeModal);
+      modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      uploadInput?.addEventListener('change', async () => {
+        const file = uploadInput.files?.[0];
+        if (!file) return;
+        if (mStatus) mStatus.textContent = 'Lädt hoch…';
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/media', { method: 'POST', body: fd });
+        const j = await res.json();
+        uploadInput.value = '';
+        if (j.ok) { mediaCache = null; const items = await loadMedia(true); renderGrid(items); if (activePicker) choose(j.item.url); }
+        else if (mStatus) mStatus.textContent = j.error ?? 'Upload fehlgeschlagen.';
+      });
+      function initImgPick(root: ParentNode = document) {
+        root.querySelectorAll<HTMLElement>('[data-imgpick]').forEach((p) => {
+          if (p.dataset.ready) return;
+          p.dataset.ready = '1';
+          p.querySelector('[data-imgpick-open]')?.addEventListener('click', () => openModal(p));
+          p.querySelector('[data-imgpick-clear]')?.addEventListener('click', () => {
+            p.querySelector<HTMLInputElement>('[data-imgpick-input]')!.value = '';
+            p.querySelector('[data-imgpick-preview]')!.innerHTML = '<span class="imgpick-empty">Kein Bild</span>';
+            p.querySelector('[data-imgpick-clear]')?.setAttribute('hidden', '');
+          });
+        });
+      }
+      (window as any).__initImgPick = initImgPick;
+      initImgPick();
     </script>
   </body>
 </html>

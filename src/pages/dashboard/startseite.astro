@@ -1,19 +1,22 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import RichText from '@/components/dashboard/RichText.astro';
+import ImagePicker from '@/components/dashboard/ImagePicker.astro';
 import { getContent, isCosmicConfigured } from '@/lib/cosmic';
 export const prerender = false;
 
 const content = await getContent();
 const p = content.pages.index;
+const teasers = p.teasers ?? [];
 const cosmicConfigured = isCosmicConfigured();
 ---
 <DashboardLayout title="Startseite" active="startseite" cosmicConfigured={cosmicConfigured}>
   <h1>Startseite</h1>
-  <p class="lead">Bearbeite die große Überschrift, den Einleitungstext und den Haupt-Button.</p>
+  <p class="lead">Hero, „Über mich" und die drei Leistungs-Teaser der Startseite.</p>
 
   <form class="card" data-save-form data-section="startseite">
     <h2>Hero-Bereich</h2>
-    <p class="desc">Tipp: Mit <code>*Wort*</code> hebst du einzelne Wörter golden hervor. Zeilenumbrüche bleiben erhalten.</p>
+    <p class="desc">Tipp: Mit <code>*Wort*</code> in der Überschrift hebst du Wörter golden hervor.</p>
 
     <div class="field" data-field="hero_title">
       <label for="hero_title">Hauptüberschrift *</label>
@@ -21,11 +24,7 @@ const cosmicConfigured = isCosmicConfigured();
       <span class="err"></span>
     </div>
 
-    <div class="field" data-field="hero_text">
-      <label for="hero_text">Einleitungstext *</label>
-      <textarea id="hero_text" name="hero_text" required>{p.hero_text}</textarea>
-      <span class="err"></span>
-    </div>
+    <RichText name="hero_text" value={p.hero_text} label="Einleitungstext *" />
 
     <div class="row">
       <div class="field" data-field="cta_text">
@@ -35,10 +34,38 @@ const cosmicConfigured = isCosmicConfigured();
       </div>
       <div class="field" data-field="cta_link">
         <label for="cta_link">Button-Link</label>
-        <input id="cta_link" name="cta_link" type="text" value={p.cta_link ?? '/kontakt'} placeholder="/kontakt oder https://…" />
+        <input id="cta_link" name="cta_link" type="text" value={p.cta_link ?? '/kontakt'} />
         <span class="err"></span>
       </div>
     </div>
+
+    <ImagePicker name="hero_image" value={p.hero_image ?? ''} label="Hero-Hintergrundbild" />
+
+    <h2 style="margin-top:36px">Über mich</h2>
+    <div class="field" data-field="about_title">
+      <label for="about_title">Überschrift *</label>
+      <input id="about_title" name="about_title" type="text" required value={p.about_title ?? ''} />
+      <span class="err"></span>
+    </div>
+    <RichText name="about_text" value={p.about_text ?? ''} label="Text *" />
+    <div class="row">
+      <ImagePicker name="about_image_1" value={p.about_image_1 ?? ''} label="Bild 1 (groß)" />
+      <ImagePicker name="about_image_2" value={p.about_image_2 ?? ''} label="Bild 2 (klein)" />
+    </div>
+
+    <h2 style="margin-top:36px">Leistungs-Teaser (3 Stück)</h2>
+    {teasers.map((t, i) => (
+      <div class="repeat-item">
+        <input type="hidden" name={`teasers[${i}][num]`} value={t.num} />
+        <div class="field" data-field={`teasers.${i}.title`}>
+          <label>Titel *</label>
+          <input name={`teasers[${i}][title]`} type="text" required value={t.title} />
+          <span class="err"></span>
+        </div>
+        <RichText name={`teasers[${i}][text]`} value={t.text} label="Text *" />
+        <ImagePicker name={`teasers[${i}][image]`} value={t.image} label="Bild" />
+      </div>
+    ))}
 
     <div class="save-bar">
       <button type="submit" class="btn-save">Speichern</button>

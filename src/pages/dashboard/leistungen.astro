@@ -1,5 +1,6 @@
 ---
 import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import RichText from '@/components/dashboard/RichText.astro';
 import { getContent, isCosmicConfigured } from '@/lib/cosmic';
 export const prerender = false;
 
@@ -9,7 +10,7 @@ const cosmicConfigured = isCosmicConfigured();
 ---
 <DashboardLayout title="Leistungen" active="leistungen" cosmicConfigured={cosmicConfigured}>
   <h1>Leistungen</h1>
-  <p class="lead">Bearbeite Titel und Beschreibung jeder Leistung. Du kannst Leistungen hinzufügen oder entfernen.</p>
+  <p class="lead">Titel und Beschreibung jeder Leistung. Beschreibungen lassen sich formatieren (fett, kursiv, Listen, Links).</p>
 
   <form class="card" data-save-form data-section="leistungen">
     <h2>Eure Angebote</h2>
@@ -24,11 +25,7 @@ const cosmicConfigured = isCosmicConfigured();
             <input name={`services[${i}][title]`} type="text" required value={s.title} />
             <span class="err"></span>
           </div>
-          <div class="field" data-field={`services.${i}.description`}>
-            <label>Beschreibung *</label>
-            <textarea name={`services[${i}][description]`} required>{s.description}</textarea>
-            <span class="err"></span>
-          </div>
+          <RichText name={`services[${i}][description]`} value={s.description} label="Beschreibung *" />
         </div>
       ))}
     </div>
@@ -44,28 +41,48 @@ const cosmicConfigured = isCosmicConfigured();
 </DashboardLayout>
 
 <script>
-  // Add/remove repeatable service items, keeping name indices in sync.
+  function rteMarkup(name: string) {
+    return `
+      <div class="field" data-field="${name}">
+        <label>Beschreibung *</label>
+        <div class="rte" data-rte>
+          <div class="rte-toolbar">
+            <button type="button" data-cmd="bold" title="Fett"><b>B</b></button>
+            <button type="button" data-cmd="italic" title="Kursiv"><i>I</i></button>
+            <button type="button" data-cmd="insertUnorderedList" title="Liste">• Liste</button>
+            <button type="button" data-cmd="createLink" title="Link">🔗 Link</button>
+            <button type="button" data-cmd="unlink" title="Link entfernen">✕ Link</button>
+          </div>
+          <div class="rte-area" contenteditable="true" data-rte-area></div>
+          <textarea name="${name}" data-rte-input hidden></textarea>
+        </div>
+        <span class="err"></span>
+      </div>`;
+  }
   function reindex(list: HTMLElement) {
     list.querySelectorAll<HTMLElement>('[data-repeat-item]').forEach((item, i) => {
-      item.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[name]').forEach((el) => {
-        el.name = el.name.replace(/^services\[\d+\]/, `services[${i}]`);
+      item.querySelectorAll<HTMLElement>('[name]').forEach((el) => {
+        (el as HTMLInputElement).name = (el as HTMLInputElement).name.replace(/^services\[\d+\]/, `services[${i}]`);
+      });
+      item.querySelectorAll<HTMLElement>('[data-field]').forEach((el) => {
+        const f = el.getAttribute('data-field')!;
+        el.setAttribute('data-field', f.replace(/^services[.[]\d+[\].]?/, `services.${i}.`).replace('services.' + i + '.', `services.${i}.`));
       });
     });
   }
   document.querySelectorAll<HTMLElement>('[data-repeat-list]').forEach((list) => {
     const add = list.parentElement?.querySelector('[data-add-item]');
     add?.addEventListener('click', () => {
+      const i = list.querySelectorAll('[data-repeat-item]').length;
       const tpl = document.createElement('div');
       tpl.className = 'repeat-item';
       tpl.setAttribute('data-repeat-item', '');
       tpl.innerHTML = `
         <button type="button" class="remove" data-remove aria-label="Entfernen">×</button>
-        <div class="field"><label>Titel *</label><input type="text" required /><span class="err"></span></div>
-        <div class="field"><label>Beschreibung *</label><textarea required></textarea><span class="err"></span></div>`;
+        <div class="field" data-field="services.${i}.title"><label>Titel *</label><input name="services[${i}][title]" type="text" required /><span class="err"></span></div>
+        ${rteMarkup(`services[${i}][description]`)}`;
       list.appendChild(tpl);
-      const i = list.querySelectorAll('[data-repeat-item]').length - 1;
-      tpl.querySelector('input')!.setAttribute('name', `services[${i}][title]`);
-      tpl.querySelector('textarea')!.setAttribute('name', `services[${i}][description]`);
+      (window as any).__initRte?.(tpl);
     });
     list.addEventListener('click', (e) => {
       const t = e.target as HTMLElement;
