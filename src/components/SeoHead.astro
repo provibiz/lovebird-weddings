@@ -72,13 +72,10 @@ const faqSchema =
 <meta property="og:locale" content="de_DE" />
 <meta name="twitter:card" content="summary_large_image" />
 
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link
-  rel="stylesheet"
-  href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
-/>
+<!-- Self-hosted fonts (declared in styles/fonts.css). Preload the two used
+     above the fold to avoid a flash of unstyled text. -->
+<link rel="preload" as="font" type="font/woff2" href="/fonts/inter.woff2" crossorigin />
+<link rel="preload" as="font" type="font/woff2" href="/fonts/cormorant-garamond.woff2" crossorigin />
 
 {localBusinessSchema && (
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema)} />
