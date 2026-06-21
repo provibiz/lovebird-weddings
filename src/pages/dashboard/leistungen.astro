@@ -1,0 +1,78 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getContent, isCosmicConfigured } from '@/lib/cosmic';
+export const prerender = false;
+
+const content = await getContent();
+const services = content.services;
+const cosmicConfigured = isCosmicConfigured();
+---
+<DashboardLayout title="Leistungen" active="leistungen" cosmicConfigured={cosmicConfigured}>
+  <h1>Leistungen</h1>
+  <p class="lead">Bearbeite Titel und Beschreibung jeder Leistung. Du kannst Leistungen hinzufügen oder entfernen.</p>
+
+  <form class="card" data-save-form data-section="leistungen">
+    <h2>Eure Angebote</h2>
+    <p class="desc">Die Reihenfolge entspricht der Anzeige auf der Leistungen-Seite.</p>
+
+    <div data-repeat-list>
+      {services.map((s, i) => (
+        <div class="repeat-item" data-repeat-item>
+          <button type="button" class="remove" data-remove aria-label="Entfernen">×</button>
+          <div class="field" data-field={`services.${i}.title`}>
+            <label>Titel *</label>
+            <input name={`services[${i}][title]`} type="text" required value={s.title} />
+            <span class="err"></span>
+          </div>
+          <div class="field" data-field={`services.${i}.description`}>
+            <label>Beschreibung *</label>
+            <textarea name={`services[${i}][description]`} required>{s.description}</textarea>
+            <span class="err"></span>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <button type="button" class="btn-add" data-add-item>+ Leistung hinzufügen</button>
+
+    <div class="save-bar" style="margin-top:22px">
+      <button type="submit" class="btn-save">Speichern</button>
+      <span class="status" data-status></span>
+      <a class="preview-link" href="/leistungen" target="_blank">Vorschau ↗</a>
+    </div>
+  </form>
+</DashboardLayout>
+
+<script>
+  // Add/remove repeatable service items, keeping name indices in sync.
+  function reindex(list: HTMLElement) {
+    list.querySelectorAll<HTMLElement>('[data-repeat-item]').forEach((item, i) => {
+      item.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[name]').forEach((el) => {
+        el.name = el.name.replace(/^services\[\d+\]/, `services[${i}]`);
+      });
+    });
+  }
+  document.querySelectorAll<HTMLElement>('[data-repeat-list]').forEach((list) => {
+    const add = list.parentElement?.querySelector('[data-add-item]');
+    add?.addEventListener('click', () => {
+      const tpl = document.createElement('div');
+      tpl.className = 'repeat-item';
+      tpl.setAttribute('data-repeat-item', '');
+      tpl.innerHTML = `
+        <button type="button" class="remove" data-remove aria-label="Entfernen">×</button>
+        <div class="field"><label>Titel *</label><input type="text" required /><span class="err"></span></div>
+        <div class="field"><label>Beschreibung *</label><textarea required></textarea><span class="err"></span></div>`;
+      list.appendChild(tpl);
+      const i = list.querySelectorAll('[data-repeat-item]').length - 1;
+      tpl.querySelector('input')!.setAttribute('name', `services[${i}][title]`);
+      tpl.querySelector('textarea')!.setAttribute('name', `services[${i}][description]`);
+    });
+    list.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.hasAttribute('data-remove')) {
+        t.closest('[data-repeat-item]')?.remove();
+        reindex(list);
+      }
+    });
+  });
+</script>

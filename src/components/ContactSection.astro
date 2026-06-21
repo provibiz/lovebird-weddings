@@ -1,0 +1,32 @@
+---
+import ContactForm from './ContactForm.astro';
+import type { SiteSettings } from '@/lib/types';
+
+interface Props {
+  settings: SiteSettings;
+  /** When true, render the centred section heading (home page). */
+  withHeading?: boolean;
+}
+const { settings, withHeading = true } = Astro.props;
+const instagram = settings.social_links[0];
+---
+<section class="contact" id="kontakt" style={withHeading ? '' : 'padding-top:90px'}>
+  {withHeading && (
+    <div class="section-head reveal">
+      <span class="eyebrow">Lasst uns sprechen</span>
+      <h2>Bereit, den <em style="font-style:italic;color:var(--gold-soft)">ersten Schritt</em> zu machen?</h2>
+      <div class="divider" style="background:var(--gold-soft)"></div>
+      <p style="color:rgba(255,255,255,.7)">Kontaktiert uns für ein unverbindliches Beratungsgespräch.</p>
+    </div>
+  )}
+  <div class="form-wrap">
+    <ContactForm />
+  </div>
+  <div class="contact-meta">
+    <div class="item"><small>Telefon</small><a href={`tel:${settings.phone_href}`}>{settings.phone}</a></div>
+    <div class="item"><small>E-Mail</small><a href={`mailto:${settings.email}`}>{settings.email}</a></div>
+    {instagram && (
+      <div class="item"><small>Instagram</small><a href={instagram.url} rel="noopener">{instagram.label}</a></div>
+    )}
+  </div>
+</section>

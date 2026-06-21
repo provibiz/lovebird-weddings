@@ -1,0 +1,65 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHero from '@/components/PageHero.astro';
+import FeatureBlock from '@/components/FeatureBlock.astro';
+import Quote from '@/components/Quote.astro';
+import { getContent } from '@/lib/cosmic';
+
+const content = await getContent();
+const page = content.pages.brunnenhaus;
+---
+<BaseLayout
+  title={page.seo_title}
+  description={page.seo_description}
+  settings={content.site_settings}
+  active="brunnenhaus"
+>
+  <PageHero eyebrow="Exklusivlocation" title={page.hero_title} text={page.hero_text} />
+
+  <section style="padding-top:60px">
+    <div class="container reveal" style="aspect-ratio:16/8;overflow:hidden">
+      <img
+        src="/assets/images/img_070_decb5f25.jpg"
+        loading="lazy"
+        style="width:100%;height:100%;object-fit:cover"
+        alt="Brunnenhaus – Eventlocation auf dem Weingut Pawis"
+      />
+    </div>
+  </section>
+
+  <FeatureBlock
+    eyebrow="Der Ort"
+    title={'Mitten in den *Weinbergen*'}
+    image="/assets/images/img_040_77bd4476.jpg"
+    imageAlt="Brunnenhaus Innenraum"
+  >
+    <p style="margin-bottom:18px">Eingebettet in die sanft geschwungenen Weinhänge Freyburgs an der Unstrut, bietet das Brunnenhaus eine Atmosphäre, die ihresgleichen sucht – historisch, charmant und voller Wärme.</p>
+    <p>Hier feiert ihr eure Hochzeit unter freiem Himmel oder in stilvollen Innenräumen, umgeben von Reben, sanftem Licht und der ruhigen Eleganz eines Weinguts mit Tradition.</p>
+  </FeatureBlock>
+
+  <FeatureBlock
+    eyebrow="Das Erlebnis"
+    title={'Eure Hochzeit, exklusiv *für euch*'}
+    image="/assets/images/img_055_a41e12aa.jpg"
+    imageAlt="Brunnenhaus Detail"
+    reversed
+  >
+    <p style="margin-bottom:18px">Als exklusive Location steht das Brunnenhaus an eurem Tag ganz allein euch zur Verfügung. Wir kümmern uns um jedes Detail – von der Trauung in den Weinbergen bis zum mitternächtlichen Tanz.</p>
+    <ul style="list-style:none;padding:0;font-family:var(--serif);font-size:1.1rem;color:var(--ink-soft)">
+      <li style="padding:10px 0;border-bottom:1px solid var(--line)">— Trauung im Freien, mit Blick auf die Weinberge</li>
+      <li style="padding:10px 0;border-bottom:1px solid var(--line)">— Festsaal für bis zu 80 Gäste, Tanzraum & Mobiliar im Weinguts-Stil</li>
+      <li style="padding:10px 0;border-bottom:1px solid var(--line)">— Küche mit Live-Cooking-Tresen und Buffet mit Livestations</li>
+      <li style="padding:10px 0;border-bottom:1px solid var(--line)">— Liebevolle Dekoration durch „Lovely Moments"</li>
+      <li style="padding:10px 0;border-bottom:1px solid var(--line)">— Weine & Winzersekte direkt vom Weingut Pawis</li>
+      <li style="padding:10px 0">— Zugehörige Apartments für eure Gäste</li>
+    </ul>
+    <p style="margin-top:24px">
+      Eine Location auf dem
+      <a href="https://www.weingut-pawis.de" target="_blank" rel="noopener" style="color:var(--gold);border-bottom:1px solid var(--gold)">Weingut Pawis</a>.
+    </p>
+  </FeatureBlock>
+
+  <Quote quote="Ein Ort, an dem aus Augenblicken Erinnerungen werden." cite="— Brunnenhaus auf dem Weingut Pawis">
+    <div style="margin-top:40px"><a href="/kontakt" class="cta cta-gold">Location anfragen</a></div>
+  </Quote>
+</BaseLayout>

@@ -1,0 +1,40 @@
+---
+import '@/styles/dashboard.css';
+export const prerender = false;
+
+const error = Astro.url.searchParams.get('error');
+const message =
+  error === 'config'
+    ? 'Login ist noch nicht konfiguriert (SESSION_SECRET / ADMIN_* fehlen).'
+    : error
+      ? 'Benutzername oder Passwort ist falsch.'
+      : '';
+---
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Anmelden · Lovebird Dashboard</title>
+    <!-- Fonts are self-hosted via styles/dashboard.css → fonts.css -->
+  </head>
+  <body>
+    <div class="login-wrap">
+      <form class="login-card" method="POST" action="/api/login">
+        <div class="brand">Lovebird</div>
+        <div class="sub">Dashboard-Anmeldung</div>
+        {message && <div class="err">{message}</div>}
+        <div class="field">
+          <label for="username">Benutzername</label>
+          <input id="username" name="username" type="text" required autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="password">Passwort</label>
+          <input id="password" name="password" type="password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn-save" style="width:100%;margin-top:8px">Anmelden</button>
+      </form>
+    </div>
+  </body>
+</html>

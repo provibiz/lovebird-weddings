@@ -1,0 +1,21 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# cloudflare
+.wrangler/
+
+# env
+.env
+.env.production
+.dev.vars
+
+# os / editor
+.DS_Store
+*.log
+
+# scraped reference (kept out of the Astro build)
+.reference/

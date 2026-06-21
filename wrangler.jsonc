@@ -1,0 +1,16 @@
+{
+  // Cloudflare Pages configuration for the Astro build.
+  // The public pages are static; only /dashboard and /api run on the worker.
+  "name": "lovebird-weddings",
+  "compatibility_date": "2025-06-01",
+  // Required so the Cosmic SDK (Node APIs) runs on the Workers runtime.
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": "./dist"
+
+  // Secrets (set in the Cloudflare Pages dashboard → Settings → Variables,
+  // NOT here): COSMIC_BUCKET_SLUG, COSMIC_READ_KEY, COSMIC_WRITE_KEY,
+  // CLOUDFLARE_DEPLOY_HOOK_URL, ADMIN_USERNAME, ADMIN_PASSWORD, SESSION_SECRET.
+  //
+  // Astro's optional session store is not used by this project. If you ever
+  // enable it, add a KV namespace bound as "SESSION" here.
+}

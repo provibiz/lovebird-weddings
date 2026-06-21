@@ -1,0 +1,32 @@
+---
+interface Props {
+  eyebrow: string;
+  /** May contain \n (→ <br>) and *emphasis* (→ italic gold). */
+  title: string;
+  image: string;
+  imageAlt: string;
+  /** Image on the right (default) or left (reversed). */
+  reversed?: boolean;
+}
+const { eyebrow, title, image, imageAlt, reversed = false } = Astro.props;
+
+function renderTitle(raw: string): string {
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return raw
+    .split('\n')
+    .map((line) =>
+      escape(line).replace(/\*([^*]+)\*/g, '<em style="font-style:italic;color:var(--gold)">$1</em>')
+    )
+    .join('<br>');
+}
+const titleHtml = renderTitle(title);
+---
+<section class={`feature${reversed ? ' rev' : ''}`}>
+  <div class="reveal">
+    <span class="eyebrow">{eyebrow}</span>
+    <h2 style="margin:18px 0 24px" set:html={titleHtml} />
+    <slot />
+  </div>
+  <div class="img reveal"><img src={image} loading="lazy" alt={imageAlt} /></div>
+</section>

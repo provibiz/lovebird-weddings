@@ -1,0 +1,19 @@
+---
+// Inline SVG wordmark, identical to the approved template.
+interface Props { footer?: boolean }
+const { footer = false } = Astro.props;
+const sub = footer ? 'rgba(255,255,255,.5)' : 'var(--muted)';
+---
+<span class="brand-mark" aria-hidden="true">
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="58" fill="none" stroke="#a8895f" stroke-width="1"></circle>
+    <text x="60" y="58" text-anchor="middle" font-family="Cormorant Garamond, serif" font-style="italic" font-weight="400" font-size="42" fill="#1b1916">L</text>
+    <text x="60" y="58" text-anchor="middle" font-family="Cormorant Garamond, serif" font-style="italic" font-weight="400" font-size="42" fill="#a8895f" dx="14">W</text>
+    <text x="60" y="86" text-anchor="middle" font-family="Inter, sans-serif" font-size="6.5" letter-spacing="2" fill="#6b625a">LOVEBIRD · WEDDINGS</text>
+  </svg>
+</span>
+<span class="brand-text">Lovebird<small style={`color:${sub}`}>Weddings &amp; Events</small></span>
+
+<style>
+  .brand-mark { display: inline-block; width: 54px; height: 54px; }
+</style>

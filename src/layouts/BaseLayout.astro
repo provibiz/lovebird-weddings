@@ -1,0 +1,119 @@
+---
+import '@/styles/global.css';
+import SeoHead from '@/components/SeoHead.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import type { SiteSettings, Faq } from '@/lib/types';
+
+interface Props {
+  title: string;
+  description: string;
+  settings: SiteSettings;
+  active?: string;
+  path?: string;
+  ogImage?: string;
+  localBusiness?: boolean;
+  faqs?: Faq[];
+}
+
+const {
+  title,
+  description,
+  settings,
+  active = '',
+  path = Astro.url.pathname,
+  ogImage,
+  localBusiness = false,
+  faqs = [],
+} = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <SeoHead
+      title={title}
+      description={description}
+      settings={settings}
+      path={path}
+      ogImage={ogImage}
+      localBusiness={localBusiness}
+      faqs={faqs}
+    />
+  </head>
+  <body>
+    <Header active={active} settings={settings} />
+    <main>
+      <slot />
+    </main>
+    <Footer settings={settings} />
+
+    <script>
+      // Scroll reveal
+      const obs = new IntersectionObserver(
+        (es) =>
+          es.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add('in');
+              obs.unobserve(e.target);
+            }
+          }),
+        { threshold: 0.12 }
+      );
+      document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
+
+      // Mobile menu
+      const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
+      const menu = document.querySelector<HTMLElement>('[data-mobile-menu]');
+      burger?.addEventListener('click', () => {
+        const open = menu?.classList.toggle('open');
+        burger.classList.toggle('open', open);
+        burger.setAttribute('aria-expanded', String(Boolean(open)));
+      });
+      menu?.querySelectorAll('a').forEach((a) =>
+        a.addEventListener('click', () => {
+          menu.classList.remove('open');
+          burger?.classList.remove('open');
+          burger?.setAttribute('aria-expanded', 'false');
+        })
+      );
+
+      // Testimonial "Mehr lesen" toggle
+      document.querySelectorAll<HTMLButtonElement>('.testi-toggle').forEach((b) =>
+        b.addEventListener('click', () => {
+          const card = b.closest('.testi');
+          if (!card) return;
+          card.classList.toggle('collapsed');
+          b.textContent = card.classList.contains('collapsed') ? 'Mehr lesen' : 'Weniger';
+        })
+      );
+
+      // Loveletter swipe dots (mobile)
+      (function () {
+        const grid = document.querySelector<HTMLElement>('.testi-grid');
+        const dotsEl = document.querySelector<HTMLElement>('.testi-dots');
+        if (!grid || !dotsEl) return;
+        const cards = [...grid.querySelectorAll<HTMLElement>('.testi')];
+        cards.forEach((_, i) => {
+          const s = document.createElement('span');
+          if (i === 0) s.classList.add('active');
+          s.addEventListener('click', () =>
+            cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+          );
+          dotsEl.appendChild(s);
+        });
+        const dots = [...dotsEl.children];
+        const io = new IntersectionObserver(
+          (entries) =>
+            entries.forEach((en) => {
+              if (en.isIntersecting) {
+                const i = cards.indexOf(en.target as HTMLElement);
+                dots.forEach((d, k) => d.classList.toggle('active', k === i));
+              }
+            }),
+          { root: grid, threshold: 0.6 }
+        );
+        cards.forEach((c) => io.observe(c));
+      })();
+    </script>
+  </body>
+</html>

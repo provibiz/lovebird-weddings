@@ -1,0 +1,20 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHero from '@/components/PageHero.astro';
+import ContactSection from '@/components/ContactSection.astro';
+import { getContent } from '@/lib/cosmic';
+
+const content = await getContent();
+const page = content.pages.kontakt;
+const faqs = content.faqs;
+---
+<BaseLayout
+  title={page.seo_title}
+  description={page.seo_description}
+  settings={content.site_settings}
+  active="kontakt"
+  faqs={faqs}
+>
+  <PageHero eyebrow="Lasst uns sprechen" title={page.hero_title} text={page.hero_text} />
+  <ContactSection settings={content.site_settings} withHeading={false} />
+</BaseLayout>

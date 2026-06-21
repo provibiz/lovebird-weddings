@@ -1,0 +1,77 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getContent, isCosmicConfigured } from '@/lib/cosmic';
+export const prerender = false;
+
+const content = await getContent();
+const faqs = content.faqs;
+const cosmicConfigured = isCosmicConfigured();
+---
+<DashboardLayout title="FAQ" active="faq" cosmicConfigured={cosmicConfigured}>
+  <h1>Häufige Fragen</h1>
+  <p class="lead">Pflege Fragen & Antworten. Sie erscheinen automatisch als FAQ und werden für Google strukturiert ausgegeben.</p>
+
+  <form class="card" data-save-form data-section="faq">
+    <h2>FAQ-Einträge</h2>
+    <p class="desc">Leere Einträge werden beim Speichern ignoriert.</p>
+
+    <div data-repeat-list>
+      {faqs.map((f, i) => (
+        <div class="repeat-item" data-repeat-item>
+          <button type="button" class="remove" data-remove aria-label="Entfernen">×</button>
+          <div class="field" data-field={`faqs.${i}.question`}>
+            <label>Frage *</label>
+            <input name={`faqs[${i}][question]`} type="text" value={f.question} />
+            <span class="err"></span>
+          </div>
+          <div class="field" data-field={`faqs.${i}.answer`}>
+            <label>Antwort *</label>
+            <textarea name={`faqs[${i}][answer]`}>{f.answer}</textarea>
+            <span class="err"></span>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <button type="button" class="btn-add" data-add-item>+ Frage hinzufügen</button>
+
+    <div class="save-bar" style="margin-top:22px">
+      <button type="submit" class="btn-save">Speichern</button>
+      <span class="status" data-status></span>
+      <a class="preview-link" href="/kontakt" target="_blank">Vorschau ↗</a>
+    </div>
+  </form>
+</DashboardLayout>
+
+<script>
+  function reindex(list: HTMLElement) {
+    list.querySelectorAll<HTMLElement>('[data-repeat-item]').forEach((item, i) => {
+      item.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[name]').forEach((el) => {
+        el.name = el.name.replace(/^faqs\[\d+\]/, `faqs[${i}]`);
+      });
+    });
+  }
+  document.querySelectorAll<HTMLElement>('[data-repeat-list]').forEach((list) => {
+    const add = list.parentElement?.querySelector('[data-add-item]');
+    add?.addEventListener('click', () => {
+      const tpl = document.createElement('div');
+      tpl.className = 'repeat-item';
+      tpl.setAttribute('data-repeat-item', '');
+      tpl.innerHTML = `
+        <button type="button" class="remove" data-remove aria-label="Entfernen">×</button>
+        <div class="field"><label>Frage *</label><input type="text" /><span class="err"></span></div>
+        <div class="field"><label>Antwort *</label><textarea></textarea><span class="err"></span></div>`;
+      list.appendChild(tpl);
+      const i = list.querySelectorAll('[data-repeat-item]').length - 1;
+      tpl.querySelector('input')!.setAttribute('name', `faqs[${i}][question]`);
+      tpl.querySelector('textarea')!.setAttribute('name', `faqs[${i}][answer]`);
+    });
+    list.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.hasAttribute('data-remove')) {
+        t.closest('[data-repeat-item]')?.remove();
+        reindex(list);
+      }
+    });
+  });
+</script>

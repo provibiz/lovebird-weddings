@@ -1,0 +1,14 @@
+---
+const words = ['Individuell', 'Stilvoll', 'Detailverliebt', 'Authentisch', 'Vertrauensvoll', 'Liebevoll'];
+---
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    {[0, 1].map(() => (
+      <span>
+        {words.map((w) => (
+          <>{w}<i class="dot"></i></>
+        ))}
+      </span>
+    ))}
+  </div>
+</div>

@@ -1,0 +1,39 @@
+---
+import Logo from './Logo.astro';
+import type { SiteSettings } from '@/lib/types';
+
+interface Props {
+  active?: string;
+  settings: SiteSettings;
+}
+const { active = '', settings } = Astro.props;
+
+const links = [
+  { href: '/', label: 'Startseite', key: 'index' },
+  { href: '/leistungen', label: 'Leistungen', key: 'leistungen' },
+  { href: '/portfolio', label: 'Portfolio', key: 'portfolio' },
+  { href: '/brunnenhaus', label: 'Brunnenhaus', key: 'brunnenhaus' },
+  { href: '/kontakt', label: 'Kontakt', key: 'kontakt' },
+];
+---
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="brand" aria-label="Lovebird Weddings & Events – Startseite">
+      <Logo />
+    </a>
+    <div class="menu">
+      {links.map((l) => (
+        <a href={l.href} class={active === l.key ? 'active' : ''}>{l.label}</a>
+      ))}
+    </div>
+    <a href="/kontakt" class="cta cta-gold">Anfrage stellen</a>
+    <button class="burger" aria-label="Menü öffnen" aria-expanded="false" data-burger>
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+<div class="mobile-menu" data-mobile-menu>
+  {links.map((l) => <a href={l.href}>{l.label}</a>)}
+  <a href="/kontakt" class="cta cta-gold" style="margin-top:20px">Anfrage stellen</a>
+  <div class="meta">{settings.phone}</div>
+</div>
