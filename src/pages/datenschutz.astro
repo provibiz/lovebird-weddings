@@ -11,60 +11,142 @@ const s = content.site_settings;
   description="Datenschutzerklärung von Lovebird Weddings & Events gemäß DSGVO."
   settings={s}
 >
-  <PageHero eyebrow="DSGVO" title="*Datenschutz*" text="Informationen zur Verarbeitung eurer personenbezogenen Daten." />
+  <PageHero eyebrow="DSGVO" title="*Datenschutz*" text="Informationen zur Verarbeitung Ihrer personenbezogenen Daten." />
 
   <section class="legal">
     <div class="narrow reveal">
+      <!-- HINWEIS Kundin: Diese Erklärung basiert auf eurem bisherigen Text
+           (Datenschutz-Generator), wurde aber an die neue Website angepasst:
+           Die alte Seite nutzte Facebook-Plug-ins, Google Analytics und
+           Instagram-Embeds. Die neue Seite lädt diese NICHT mehr – sie wird bei
+           Cloudflare gehostet, nutzt Google Fonts und verlinkt Instagram nur.
+           Die betreffenden Abschnitte wurden deshalb ersetzt. Bitte vor dem
+           Live-Gang final rechtlich prüfen lassen. -->
+
       <p>
-        <!-- TODO Kundin: Diese Datenschutzerklärung ist ein Gerüst. Bitte vor
-             Veröffentlichung rechtlich prüfen lassen (z. B. mit einem
-             Datenschutz-Generator) und an die tatsächlich eingesetzten Dienste
-             (Hosting, Schriftarten, Karten, Tracking) anpassen. -->
+        Diese Datenschutzerklärung klärt Sie über die Art, den Umfang und Zweck der Verarbeitung von
+        personenbezogenen Daten (nachfolgend kurz „Daten") innerhalb unseres Onlineangebotes und der
+        mit ihm verbundenen Webseiten, Funktionen und Inhalte sowie externen Onlinepräsenzen, wie
+        z. B. unser Social-Media-Profil (nachfolgend gemeinsam bezeichnet als „Onlineangebot") auf.
+        Im Hinblick auf die verwendeten Begrifflichkeiten verweisen wir auf die Definitionen in
+        Art. 4 der Datenschutz-Grundverordnung (DSGVO).
       </p>
 
-      <h2>1. Verantwortlicher</h2>
+      <h2>Arten der verarbeiteten Daten</h2>
+      <ul>
+        <li>Bestandsdaten (z. B. Namen, Adressen)</li>
+        <li>Kontaktdaten (z. B. E-Mail, Telefonnummern)</li>
+        <li>Inhaltsdaten (z. B. Texteingaben, Fotografien, Videos)</li>
+        <li>Nutzungsdaten (z. B. besuchte Webseiten, Interesse an Inhalten, Zugriffszeiten)</li>
+        <li>Meta-/Kommunikationsdaten (z. B. Geräte-Informationen, IP-Adressen)</li>
+      </ul>
+
+      <h2>Kategorien betroffener Personen</h2>
       <p>
-        Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br />
-        Sarah Pohl, {s.company_name}<br />
-        E-Mail: <a href={`mailto:${s.email}`}>{s.email}</a><br />
-        Telefon: <a href={`tel:${s.phone_href}`}>{s.phone}</a>
+        Besucher und Nutzer des Onlineangebotes (nachfolgend bezeichnen wir die betroffenen Personen
+        zusammenfassend auch als „Nutzer").
       </p>
 
-      <h2>2. Kontaktaufnahme</h2>
+      <h2>Zweck der Verarbeitung</h2>
+      <ul>
+        <li>Zurverfügungstellung des Onlineangebotes, seiner Funktionen und Inhalte</li>
+        <li>Beantwortung von Kontaktanfragen und Kommunikation mit Nutzern</li>
+        <li>Sicherheitsmaßnahmen</li>
+      </ul>
+
+      <h2>1. Maßgebliche Rechtsgrundlagen</h2>
       <p>
-        Wenn ihr uns über das Anfrageformular, per E-Mail oder telefonisch kontaktiert, werden
-        eure Angaben (z. B. Name, Telefon, E-Mail, Veranstaltungsdatum und eure Nachricht) zum
-        Zweck der Bearbeitung der Anfrage und für mögliche Anschlussfragen gespeichert. Rechts-
-        grundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Diese Daten geben wir nicht ohne eure
-        Einwilligung weiter und löschen sie, sobald sie für den Zweck nicht mehr erforderlich sind.
+        Wir verarbeiten personenbezogene Daten auf Grundlage Ihrer Einwilligung (Art. 6 Abs. 1 lit. a
+        DSGVO), zur Erfüllung bzw. Anbahnung eines Vertrags (Art. 6 Abs. 1 lit. b DSGVO), zur
+        Erfüllung rechtlicher Verpflichtungen (Art. 6 Abs. 1 lit. c DSGVO) sowie zur Wahrung unserer
+        berechtigten Interessen (Art. 6 Abs. 1 lit. f DSGVO).
+      </p>
+
+      <h2>2. Name und Anschrift des Verantwortlichen</h2>
+      <p>
+        Verantwortlicher im Sinne der DSGVO ist:<br />
+        Lovebird Weddings – Inh. Sarah Pohl<br />
+        06237 Leuna, Deutschland<br />
+        Telefon: <a href={`tel:${s.phone_href}`}>{s.phone}</a><br />
+        E-Mail: <a href={`mailto:${s.email}`}>{s.email}</a>
       </p>
 
       <h2>3. Hosting</h2>
       <p>
-        Diese Website wird bei Cloudflare Pages gehostet. Beim Aufruf werden technisch notwendige
-        Server-Logdaten (z. B. IP-Adresse, Datum, Uhrzeit, abgerufene Seite) verarbeitet. Rechts-
-        grundlage ist Art. 6 Abs. 1 lit. f DSGVO (sicherer und stabiler Betrieb).
+        Diese Website wird bei Cloudflare (Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107,
+        USA) gehostet und über deren weltweites Content-Delivery-Network ausgeliefert. Beim Aufruf der
+        Seiten verarbeitet Cloudflare technisch notwendige Server-Logdaten (z. B. IP-Adresse, Datum,
+        Uhrzeit, abgerufene Seite, Browsertyp), um die Auslieferung sicher und stabil zu gewährleisten.
+        Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb).
       </p>
 
-      <h2>4. Schriftarten</h2>
+      <h2>4. Cookies</h2>
       <p>
-        Diese Website bindet Schriftarten von Google Fonts ein. Beim Laden kann eine Verbindung zu
-        Servern von Google hergestellt werden. Wenn ihr dies vermeiden möchtet, können die
-        Schriftarten lokal eingebunden werden.
-        <!-- TODO Kundin: Falls Google Fonts lokal gehostet werden, diesen Absatz anpassen. -->
+        Die öffentlichen Seiten dieser Website setzen keine Tracking- oder Marketing-Cookies. Lediglich
+        im internen Verwaltungsbereich (Dashboard) wird ein technisch notwendiges Session-Cookie
+        gesetzt, um den Login-Status zu speichern. Sie können das Speichern von Cookies in den
+        Einstellungen Ihres Browsers verhindern oder bereits gesetzte Cookies löschen.
       </p>
 
-      <h2>5. Eure Rechte</h2>
+      <h2>5. Schriftarten (Google Fonts)</h2>
       <p>
-        Ihr habt jederzeit das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der
-        Verarbeitung, Datenübertragbarkeit und Widerspruch sowie das Recht, eine Einwilligung zu
-        widerrufen. Zudem könnt ihr euch bei einer Datenschutz-Aufsichtsbehörde beschweren.
+        Zur einheitlichen Darstellung von Schriftarten nutzt diese Website „Google Fonts" der Google
+        Ireland Limited (Gordon House, Barrow Street, Dublin 4, Irland). Beim Aufruf einer Seite lädt
+        Ihr Browser die benötigten Schriften von Google-Servern; dabei kann Ihre IP-Adresse an Google
+        übermittelt werden. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Sofern eine lokale
+        Einbindung der Schriften gewünscht ist, kann diese Datenübertragung vollständig vermieden
+        werden.
+        <!-- TODO Kundin: Falls Google Fonts lokal gehostet werden sollen, diesen Absatz anpassen. -->
       </p>
 
-      <h2>6. Kontakt zum Datenschutz</h2>
+      <h2>6. Kontaktaufnahme über die Internetseite</h2>
       <p>
-        Bei Fragen zum Datenschutz erreicht ihr uns unter
-        <a href={`mailto:${s.email}`}>{s.email}</a>.
+        Bei der Kontaktaufnahme mit uns (z. B. per Anfrageformular, E-Mail oder Telefon) werden die
+        Angaben des Nutzers zur Bearbeitung der Kontaktanfrage sowie für den Fall von Anschlussfragen
+        gespeichert. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Es erfolgt keine Weitergabe
+        dieser Daten an Dritte. Die Daten werden gelöscht, sobald sie für den Zweck nicht mehr
+        erforderlich sind und keine gesetzlichen Aufbewahrungspflichten entgegenstehen.
+      </p>
+
+      <h2>7. Instagram</h2>
+      <p>
+        Auf dieser Website verlinken wir lediglich auf unser Instagram-Profil (Betreiber: Meta
+        Platforms Ireland Ltd., 4 Grand Canal Square, Dublin 2, Irland). Es werden keine Instagram-
+        Inhalte eingebettet; eine Datenübermittlung an Instagram findet erst statt, wenn Sie den Link
+        aktiv anklicken und die Plattform aufrufen. Es gelten dann die Datenschutzbestimmungen von
+        Instagram: <a href="https://privacycenter.instagram.com/policy" target="_blank" rel="noopener">https://privacycenter.instagram.com/policy</a>.
+      </p>
+
+      <h2>8. Löschung von Daten</h2>
+      <p>
+        Die von uns verarbeiteten Daten werden nach Maßgabe der Art. 17 und 18 DSGVO gelöscht oder in
+        ihrer Verarbeitung eingeschränkt. Sofern nicht ausdrücklich angegeben, werden die bei uns
+        gespeicherten Daten gelöscht, sobald sie für ihre Zweckbestimmung nicht mehr erforderlich sind
+        und der Löschung keine gesetzlichen Aufbewahrungspflichten entgegenstehen. Nach gesetzlichen
+        Vorgaben erfolgt die Aufbewahrung insbesondere für 10 Jahre gemäß §§ 147 Abs. 1 AO, 257 Abs. 1
+        Nr. 1 und 4, Abs. 4 HGB und 6 Jahre gemäß § 257 Abs. 1 Nr. 2 und 3, Abs. 4 HGB.
+      </p>
+
+      <h2>9. Rechte der betroffenen Person</h2>
+      <p>
+        Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17),
+        Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) sowie ein
+        Widerspruchsrecht (Art. 21 DSGVO). Eine erteilte Einwilligung können Sie jederzeit mit Wirkung
+        für die Zukunft widerrufen. Zudem haben Sie das Recht, sich bei einer Datenschutz-
+        Aufsichtsbehörde zu beschweren.
+      </p>
+
+      <h2>10. Dauer der Speicherung</h2>
+      <p>
+        Das Kriterium für die Dauer der Speicherung von personenbezogenen Daten ist die jeweilige
+        gesetzliche Aufbewahrungsfrist. Nach Ablauf der Frist werden die entsprechenden Daten
+        routinemäßig gelöscht, sofern sie nicht mehr zur Vertragserfüllung oder Vertragsanbahnung
+        erforderlich sind.
+      </p>
+
+      <p class="muted-note">
+        Erstellt in Anlehnung an einen Mustertext des Datenschutz-Generators von RA Dr. Thomas
+        Schwenke und an die technischen Gegebenheiten dieser Website angepasst.
       </p>
     </div>
   </section>
@@ -74,5 +156,7 @@ const s = content.site_settings;
   .legal { padding-top: 70px; }
   .legal .narrow h2 { font-size: 1.4rem; margin: 40px 0 14px; color: var(--ink); }
   .legal .narrow p { margin-bottom: 12px; line-height: 1.8; }
+  .legal .narrow ul { margin: 0 0 12px 1.1rem; line-height: 1.8; color: var(--ink-soft); }
   .legal .narrow a { color: var(--gold); }
+  .legal .muted-note { margin-top: 36px; font-size: .82rem; color: var(--muted); }
 </style>
