@@ -1,0 +1,42 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHero from '@/components/PageHero.astro';
+import ServiceList from '@/components/ServiceList.astro';
+import FeatureBlock from '@/components/FeatureBlock.astro';
+import Quote from '@/components/Quote.astro';
+import { getContent } from '@/lib/cosmic';
+
+const content = await getContent();
+const page = content.pages.leistungen;
+---
+<BaseLayout
+  title={page.seo_title}
+  description={page.seo_description}
+  settings={content.site_settings}
+  active="leistungen"
+>
+  <PageHero eyebrow="Was wir für euch tun" title={page.hero_title} text={page.hero_text} />
+
+  <ServiceList services={content.services} />
+
+  <FeatureBlock
+    eyebrow="Exklusivlocation"
+    title={'Brunnenhaus\n*Freyburg / Unstrut*'}
+    image="/assets/images/img_070_decb5f25.jpg"
+    imageAlt="Eventlocation Brunnenhaus"
+  >
+    <p style="margin-bottom:24px">Entdeckt unsere Eventlocation Brunnenhaus als exklusive Location für eure Hochzeit – mitten in den Weinbergen Freyburg an der Unstrut, auf dem Weingut Pawis.</p>
+    <a href="/brunnenhaus" class="cta">Brunnenhaus entdecken</a>
+  </FeatureBlock>
+
+  <Quote quote="Euer Angebot, so individuell wie ihr als Brautpaar." cite="— Lovebird Weddings" />
+
+  <section class="center">
+    <div class="narrow reveal">
+      <span class="eyebrow">Unser Dienstleisternetzwerk</span>
+      <h2 style="margin:18px 0 24px">Eure <em style="font-style:italic;color:var(--gold)">zuverlässigen</em> Partner</h2>
+      <p>Durch viele einzigartige Events, gemeinsame Projekte und Zielstellungen blicken wir auf ein umfassendes Netzwerk toller Dienstleister in allen Bereichen. Profitiert von einem authentischen und kompetenten Netzwerk an Hochzeitsdienstleistern – voller Liebe zum Detail und zu ihrem Handwerk.</p>
+      <div style="margin-top:40px"><a href="/kontakt" class="cta cta-solid">Individuelles Angebot anfragen</a></div>
+    </div>
+  </section>
+</BaseLayout>

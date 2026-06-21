@@ -1,0 +1,56 @@
+---
+// Anfrageformular. Identical fields to the approved template. On submit it
+// shows an inline confirmation (no backend wired in the prototype).
+---
+<form class="form" data-contact-form>
+  <div class="field"><label for="cf-name">Name *</label><input id="cf-name" required type="text" name="name" autocomplete="name" /></div>
+  <div class="field"><label for="cf-phone">Telefon *</label><input id="cf-phone" required type="tel" name="phone" autocomplete="tel" /></div>
+  <div class="field"><label for="cf-email">E-Mail *</label><input id="cf-email" required type="email" name="email" autocomplete="email" /></div>
+  <div class="field"><label for="cf-date">Veranstaltungsdatum *</label><input id="cf-date" required type="date" name="date" /></div>
+  <div class="field"><label for="cf-budget">Budget</label>
+    <select id="cf-budget" name="budget">
+      <option value="">— wählen —</option>
+      <option>bis 5.000 €</option><option>5.000 – 10.000 €</option>
+      <option>10.000 – 20.000 €</option><option>20.000 – 35.000 €</option>
+      <option>35.000 € +</option>
+    </select>
+  </div>
+  <div class="field"><label for="cf-service">Leistungswunsch</label>
+    <select id="cf-service" name="service">
+      <option value="">— wählen —</option>
+      <option>Komplettplanung</option><option>Wedding Day Management</option>
+      <option>Teilplanung</option><option>Eventpapeterie</option>
+      <option>Wedding Talk</option><option>Location-Scouting</option>
+    </select>
+  </div>
+  <div class="field full"><label for="cf-message">Loveletter · Eure Anfrage *</label>
+    <textarea id="cf-message" required name="message" placeholder="Erzählt uns von eurer Liebesgeschichte und eurem Traum vom großen Tag…"></textarea>
+  </div>
+  <div class="field full consent">
+    <input required type="checkbox" id="cf-consent" />
+    <label for="cf-consent" style="color:rgba(255,255,255,.7);text-transform:none;letter-spacing:normal;font-size:.85rem">Ich bin damit einverstanden, dass diese Daten zum Zwecke der Kontaktaufnahme gespeichert und verarbeitet werden. Mir ist bekannt, dass ich meine Einwilligung jederzeit widerrufen kann. *</label>
+  </div>
+  <div class="field full submit-row">
+    <button type="submit" class="btn-submit">Anfrage senden</button>
+    <p data-form-status role="status" aria-live="polite" style="display:none;margin-top:18px;color:var(--gold-soft);font-family:var(--serif);font-style:italic;font-size:1.2rem"></p>
+  </div>
+</form>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-contact-form]');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    const status = form.querySelector<HTMLElement>('[data-form-status]');
+    form.querySelectorAll('input,select,textarea,button').forEach((el) =>
+      (el as HTMLInputElement).setAttribute('disabled', 'true')
+    );
+    if (status) {
+      status.textContent = 'Vielen Dank! Wir melden uns in Kürze bei euch.';
+      status.style.display = 'block';
+    }
+  });
+</script>

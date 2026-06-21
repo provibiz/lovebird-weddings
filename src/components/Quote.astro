@@ -1,0 +1,14 @@
+---
+interface Props {
+  quote: string;
+  cite?: string;
+  mark?: boolean;
+}
+const { quote, cite, mark = false } = Astro.props;
+---
+<section class="quote">
+  {mark && <div class="mark">"</div>}
+  <blockquote>{quote}</blockquote>
+  {cite && <cite>{cite}</cite>}
+  <slot />
+</section>

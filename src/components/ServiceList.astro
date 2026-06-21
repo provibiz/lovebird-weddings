@@ -1,0 +1,17 @@
+---
+import type { Service } from '@/lib/types';
+interface Props { services: Service[] }
+const { services } = Astro.props;
+const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+---
+<section style="padding-top:80px">
+  <div class="leist-grid">
+    {services.map((s, i) => (
+      <article class="leist reveal">
+        <div class="num">{roman[i] ?? i + 1} — Leistung</div>
+        <h3>{s.title}</h3>
+        <p>{s.description}</p>
+      </article>
+    ))}
+  </div>
+</section>

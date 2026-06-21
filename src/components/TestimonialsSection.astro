@@ -1,0 +1,24 @@
+---
+import type { Testimonial } from '@/lib/types';
+interface Props { testimonials: Testimonial[] }
+const { testimonials } = Astro.props;
+---
+<section class="testimonials">
+  <div class="section-head reveal">
+    <span class="eyebrow">Loveletter unserer Lovebirds</span>
+    <h2>Stimmen unserer <em style="font-style:italic;color:var(--gold)">Brautpaare</em></h2>
+    <div class="divider"></div>
+  </div>
+  <div class="testi-grid">
+    {testimonials.map((t) => (
+      <div class="testi collapsed reveal">
+        <div class="stars" aria-label={`${t.rating} von 5 Sternen`}>{'★ '.repeat(Math.max(0, Math.min(5, t.rating))).trim()}</div>
+        <p>{t.text}</p>
+        <button class="testi-toggle" type="button">Mehr lesen</button>
+        <cite>— {t.name}</cite>
+      </div>
+    ))}
+  </div>
+  <div class="testi-dots" aria-hidden="true"></div>
+  <div class="center mt-lg"><a href="/portfolio" class="cta cta-gold">Alle Geschichten ansehen</a></div>
+</section>

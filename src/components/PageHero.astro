@@ -1,0 +1,30 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  text: string;
+}
+const { eyebrow, title, text } = Astro.props;
+
+// Title may contain newlines (→ <br>) and *emphasis* (→ italic gold <em>).
+// Input is escaped first so it is safe to render as HTML.
+function renderTitle(raw: string): string {
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return raw
+    .split('\n')
+    .map((line) =>
+      escape(line).replace(
+        /\*([^*]+)\*/g,
+        '<em style="font-style:italic;color:var(--gold)">$1</em>'
+      )
+    )
+    .join('<br>');
+}
+const titleHtml = renderTitle(title);
+---
+<header class="page-hero">
+  <span class="eyebrow">{eyebrow}</span>
+  <h1 set:html={titleHtml} />
+  <p>{text}</p>
+</header>

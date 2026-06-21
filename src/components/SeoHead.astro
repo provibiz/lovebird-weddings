@@ -1,0 +1,88 @@
+---
+import type { SiteSettings } from '@/lib/types';
+import type { Faq } from '@/lib/types';
+
+interface Props {
+  title: string;
+  description: string;
+  settings: SiteSettings;
+  /** Path of the current page, e.g. "/leistungen". */
+  path?: string;
+  ogImage?: string;
+  /** When true, emit LocalBusiness structured data (home page). */
+  localBusiness?: boolean;
+  faqs?: Faq[];
+}
+
+const {
+  title,
+  description,
+  settings,
+  path = '/',
+  ogImage,
+  localBusiness = false,
+  faqs = [],
+} = Astro.props;
+
+const site = Astro.site ?? new URL('https://lovebirdweddings.de');
+const canonical = new URL(path, site).href;
+const image = new URL(ogImage ?? settings.default_og_image, site).href;
+
+const localBusinessSchema = localBusiness
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'ProfessionalService',
+      name: settings.company_name,
+      description: settings.default_seo_description,
+      telephone: settings.phone,
+      email: settings.email,
+      areaServed: settings.address,
+      url: site.href,
+      image,
+      sameAs: settings.social_links.map((s) => s.url),
+    }
+  : null;
+
+const faqSchema =
+  faqs.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((f) => ({
+          '@type': 'Question',
+          name: f.question,
+          acceptedAnswer: { '@type': 'Answer', text: f.answer },
+        })),
+      }
+    : null;
+---
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+<meta name="robots" content="index,follow" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={image} />
+<meta property="og:locale" content="de_DE" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap"
+/>
+
+{localBusinessSchema && (
+  <script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema)} />
+)}
+{faqSchema && (
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+)}

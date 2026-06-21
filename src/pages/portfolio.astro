@@ -1,0 +1,24 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHero from '@/components/PageHero.astro';
+import PortfolioGrid from '@/components/PortfolioGrid.astro';
+import Quote from '@/components/Quote.astro';
+import { getContent } from '@/lib/cosmic';
+
+const content = await getContent();
+const page = content.pages.portfolio;
+---
+<BaseLayout
+  title={page.seo_title}
+  description={page.seo_description}
+  settings={content.site_settings}
+  active="portfolio"
+>
+  <PageHero eyebrow="Eure Liebe, unsere Mission" title={page.hero_title} text={page.hero_text} />
+
+  <PortfolioGrid />
+
+  <Quote mark quote="Lasst uns gemeinsam eure Liebesgeschichte schreiben." cite="Bereit, den ersten Schritt zu machen?">
+    <div style="margin-top:40px"><a href="/kontakt" class="cta cta-gold">Beratungsgespräch vereinbaren</a></div>
+  </Quote>
+</BaseLayout>

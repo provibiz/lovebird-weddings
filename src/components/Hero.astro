@@ -1,0 +1,55 @@
+---
+import type { PageContent } from '@/lib/types';
+interface Props { page: PageContent }
+const { page } = Astro.props;
+
+// hero_title uses newlines; the final line is emphasised (italic gold) to
+// match the approved template.
+const lines = page.hero_title.split('\n');
+const heroImage = page.hero_image ?? '/assets/images/hero.jpg';
+---
+<section class="hero">
+  <div class="hero-bg">
+    <img
+      src={heroImage}
+      width="1600"
+      height="900"
+      fetchpriority="high"
+      alt="Edle Hochzeitstafel im goldenen Licht – florale Arrangements, Kerzen und Kristallgläser"
+    />
+  </div>
+  <div class="container hero-inner">
+    <div class="hero-grid">
+      <div class="reveal">
+        <span class="eyebrow">Lovebird Weddings &amp; Events</span>
+        <h1>
+          {lines.map((line, i) =>
+            i === lines.length - 1 ? (
+              <em>{line}</em>
+            ) : (
+              <>{line}<br /></>
+            )
+          )}
+        </h1>
+        <p class="lead">{page.hero_text}</p>
+        <div class="hero-meta">
+          <a href="/kontakt" class="cta cta-solid">Anfrage stellen</a>
+          <a href="/portfolio" class="cta">Portfolio ansehen</a>
+        </div>
+      </div>
+      <div class="hero-card reveal">
+        <small>Persönlich · seit 2022</small>
+        <h3>„Gemeinsam schaffen wir Erinnerungen."</h3>
+        <p>
+          Von der ersten Idee bis zum letzten Tanz – wir begleiten euch als Vertraute und
+          Vorausdenkerin durch jede Phase eurer Hochzeitsplanung.
+        </p>
+        <div class="line"></div>
+        <small>Standort</small>
+        <p style="font-family:var(--serif);font-size:1.2rem;color:var(--ink)">
+          zwischen Halle (Saale) und Leipzig
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

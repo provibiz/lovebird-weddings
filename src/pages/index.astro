@@ -1,0 +1,33 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Hero from '@/components/Hero.astro';
+import Marquee from '@/components/Marquee.astro';
+import ServicesSection from '@/components/ServicesSection.astro';
+import Quote from '@/components/Quote.astro';
+import AboutSection from '@/components/AboutSection.astro';
+import TestimonialsSection from '@/components/TestimonialsSection.astro';
+import ContactSection from '@/components/ContactSection.astro';
+import { getContent } from '@/lib/cosmic';
+
+const content = await getContent();
+const page = content.pages.index;
+---
+<BaseLayout
+  title={page.seo_title}
+  description={page.seo_description}
+  settings={content.site_settings}
+  active="index"
+  localBusiness
+>
+  <Hero page={page} />
+  <Marquee />
+  <ServicesSection />
+  <Quote
+    mark
+    quote="Wir hatten das große Glück, Sarah als unsere Hochzeitsplanerin zu engagieren – das war die beste Entscheidung, die wir getroffen haben."
+    cite="— Thea & Romano"
+  />
+  <AboutSection />
+  <TestimonialsSection testimonials={content.testimonials} />
+  <ContactSection settings={content.site_settings} />
+</BaseLayout>

@@ -1,0 +1,44 @@
+---
+import Logo from './Logo.astro';
+import type { SiteSettings } from '@/lib/types';
+
+interface Props { settings: SiteSettings }
+const { settings } = Astro.props;
+const instagram = settings.social_links[0];
+const year = new Date().getFullYear();
+---
+<footer>
+  <div class="foot-grid">
+    <div class="foot">
+      <div class="brand" style="margin-bottom:20px">
+        <Logo footer />
+      </div>
+      <p style="max-width:300px;line-height:1.7">
+        Individuelle Hochzeitsplanung mit Liebe zum Detail – {settings.address}.
+      </p>
+    </div>
+    <div class="foot">
+      <h4>Navigation</h4>
+      <a href="/">Startseite</a>
+      <a href="/leistungen">Leistungen</a>
+      <a href="/portfolio">Portfolio</a>
+      <a href="/brunnenhaus">Brunnenhaus</a>
+      <a href="/kontakt">Kontakt</a>
+    </div>
+    <div class="foot">
+      <h4>Kontakt</h4>
+      <a href={`tel:${settings.phone_href}`}>{settings.phone}</a>
+      <a href={`mailto:${settings.email}`}>{settings.email}</a>
+      {instagram && <a href={instagram.url} target="_blank" rel="noopener">{instagram.label}</a>}
+    </div>
+    <div class="foot">
+      <h4>Rechtliches</h4>
+      <a href="/impressum">Impressum</a>
+      <a href="/datenschutz">Datenschutz</a>
+    </div>
+  </div>
+  <div class="foot-base">
+    <span>© {year} {settings.company_name}. Alle Rechte vorbehalten.</span>
+    <span>Mit Liebe gestaltet · Made with ♡</span>
+  </div>
+</footer>

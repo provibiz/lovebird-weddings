@@ -1,0 +1,34 @@
+---
+// Portfolio cases — static, mirrors the approved template (local images).
+const cases = [
+  { date: 'Aug 2025', name: 'Kirsten & Toni', sub: 'Bordeaux-Farbtöne auf dem Reiterhof', img: 'img_034_6658439a.jpg' },
+  { date: 'Aug 2025', name: 'Michelle & David', sub: 'Kirchliche Trauung im Duisburger Innenhafen', img: 'img_071_ded3d110.jpg' },
+  { date: 'Apr 2025', name: 'Lisa & Kenny', sub: 'Rosttöne auf dem Weingut · Brunnenhaus', img: 'img_019_453faeab.jpg' },
+  { date: 'Mär 2025', name: 'Sally & Jens', sub: 'Espresso Martini im Glashaus', img: 'img_024_4cdc1c31.jpg' },
+  { date: 'Mär 2025', name: 'Lisa & Alexander', sub: 'Schlosshochzeit im Frühling', img: 'img_042_7cba3860.jpg' },
+  { date: 'Sept 2024', name: 'Carolin & Jörg', sub: 'Industrial Wedding mit Kräuterduft', img: 'img_027_56aa8d6e.jpg' },
+  { date: 'Aug 2024', name: 'Johanna & David', sub: 'Romantische Klosterhochzeit', img: 'img_064_c5c55911.jpg' },
+  { date: 'Aug 2024', name: 'Taiza & Christopher', sub: 'Deutsch-Brasilianische Feier der Liebe', img: 'img_007_16bc9b57.jpg' },
+  { date: 'Jul 2024', name: 'Jacqueline & Nico', sub: 'Scheunenhochzeit und Partystimmung', img: 'img_033_6215f113.jpg' },
+  { date: 'Jul 2024', name: 'Thea & Romano', sub: 'Greenery Wedding', img: 'img_010_2391920f.jpg' },
+  { date: 'Mai 2024', name: 'Larissa & Sebastian', sub: 'Sommerhochzeit in Pastell', img: 'img_004_130427fb.jpg' },
+  { date: 'Mai 2024', name: 'Lisa & Clemens', sub: 'White Wedding im Jagdschloss', img: 'img_076_f64976e5.jpg' },
+  { date: 'Apr 2024', name: 'Anne-Marie & Fabian', sub: 'Ostseehochzeit', img: 'img_006_1617988c.jpg' },
+  { date: 'Mai 2023', name: 'Jenny & Nils', sub: 'Scheunenhochzeit in Familie', img: 'img_002_06e89c51.jpg' },
+  { date: 'Jul 2022', name: 'Sarah & Stefan', sub: 'Unsere Traumhochzeit', img: 'img_067_ced7b4e0.jpg' },
+];
+---
+<section>
+  <div class="portfolio">
+    {cases.map((c) => (
+      <a class="case reveal" href="/kontakt">
+        <div class="img"><img src={`/assets/images/${c.img}`} loading="lazy" alt={`${c.name} – ${c.sub}`} /></div>
+        <div class="meta">
+          <div class="date">{c.date}</div>
+          <h3>{c.name}</h3>
+          <div class="sub">{c.sub}</div>
+        </div>
+      </a>
+    ))}
+  </div>
+</section>

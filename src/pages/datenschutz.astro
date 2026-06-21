@@ -1,0 +1,78 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHero from '@/components/PageHero.astro';
+import { getContent } from '@/lib/cosmic';
+
+const content = await getContent();
+const s = content.site_settings;
+---
+<BaseLayout
+  title={`Datenschutzerklärung — ${s.company_name}`}
+  description="Datenschutzerklärung von Lovebird Weddings & Events gemäß DSGVO."
+  settings={s}
+>
+  <PageHero eyebrow="DSGVO" title="*Datenschutz*" text="Informationen zur Verarbeitung eurer personenbezogenen Daten." />
+
+  <section class="legal">
+    <div class="narrow reveal">
+      <p>
+        <!-- TODO Kundin: Diese Datenschutzerklärung ist ein Gerüst. Bitte vor
+             Veröffentlichung rechtlich prüfen lassen (z. B. mit einem
+             Datenschutz-Generator) und an die tatsächlich eingesetzten Dienste
+             (Hosting, Schriftarten, Karten, Tracking) anpassen. -->
+      </p>
+
+      <h2>1. Verantwortlicher</h2>
+      <p>
+        Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br />
+        Sarah Pohl, {s.company_name}<br />
+        E-Mail: <a href={`mailto:${s.email}`}>{s.email}</a><br />
+        Telefon: <a href={`tel:${s.phone_href}`}>{s.phone}</a>
+      </p>
+
+      <h2>2. Kontaktaufnahme</h2>
+      <p>
+        Wenn ihr uns über das Anfrageformular, per E-Mail oder telefonisch kontaktiert, werden
+        eure Angaben (z. B. Name, Telefon, E-Mail, Veranstaltungsdatum und eure Nachricht) zum
+        Zweck der Bearbeitung der Anfrage und für mögliche Anschlussfragen gespeichert. Rechts-
+        grundlage ist Art. 6 Abs. 1 lit. b und f DSGVO. Diese Daten geben wir nicht ohne eure
+        Einwilligung weiter und löschen sie, sobald sie für den Zweck nicht mehr erforderlich sind.
+      </p>
+
+      <h2>3. Hosting</h2>
+      <p>
+        Diese Website wird bei Cloudflare Pages gehostet. Beim Aufruf werden technisch notwendige
+        Server-Logdaten (z. B. IP-Adresse, Datum, Uhrzeit, abgerufene Seite) verarbeitet. Rechts-
+        grundlage ist Art. 6 Abs. 1 lit. f DSGVO (sicherer und stabiler Betrieb).
+      </p>
+
+      <h2>4. Schriftarten</h2>
+      <p>
+        Diese Website bindet Schriftarten von Google Fonts ein. Beim Laden kann eine Verbindung zu
+        Servern von Google hergestellt werden. Wenn ihr dies vermeiden möchtet, können die
+        Schriftarten lokal eingebunden werden.
+        <!-- TODO Kundin: Falls Google Fonts lokal gehostet werden, diesen Absatz anpassen. -->
+      </p>
+
+      <h2>5. Eure Rechte</h2>
+      <p>
+        Ihr habt jederzeit das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der
+        Verarbeitung, Datenübertragbarkeit und Widerspruch sowie das Recht, eine Einwilligung zu
+        widerrufen. Zudem könnt ihr euch bei einer Datenschutz-Aufsichtsbehörde beschweren.
+      </p>
+
+      <h2>6. Kontakt zum Datenschutz</h2>
+      <p>
+        Bei Fragen zum Datenschutz erreicht ihr uns unter
+        <a href={`mailto:${s.email}`}>{s.email}</a>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .legal { padding-top: 70px; }
+  .legal .narrow h2 { font-size: 1.4rem; margin: 40px 0 14px; color: var(--ink); }
+  .legal .narrow p { margin-bottom: 12px; line-height: 1.8; }
+  .legal .narrow a { color: var(--gold); }
+</style>
