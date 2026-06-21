@@ -1,0 +1,49 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getContent, isCosmicConfigured } from '@/lib/cosmic';
+export const prerender = false;
+
+const content = await getContent();
+const p = content.pages.index;
+const cosmicConfigured = isCosmicConfigured();
+---
+<DashboardLayout title="Startseite" active="startseite" cosmicConfigured={cosmicConfigured}>
+  <h1>Startseite</h1>
+  <p class="lead">Bearbeite die große Überschrift, den Einleitungstext und den Haupt-Button.</p>
+
+  <form class="card" data-save-form data-section="startseite">
+    <h2>Hero-Bereich</h2>
+    <p class="desc">Tipp: Mit <code>*Wort*</code> hebst du einzelne Wörter golden hervor. Zeilenumbrüche bleiben erhalten.</p>
+
+    <div class="field" data-field="hero_title">
+      <label for="hero_title">Hauptüberschrift *</label>
+      <textarea id="hero_title" name="hero_title" required>{p.hero_title}</textarea>
+      <span class="err"></span>
+    </div>
+
+    <div class="field" data-field="hero_text">
+      <label for="hero_text">Einleitungstext *</label>
+      <textarea id="hero_text" name="hero_text" required>{p.hero_text}</textarea>
+      <span class="err"></span>
+    </div>
+
+    <div class="row">
+      <div class="field" data-field="cta_text">
+        <label for="cta_text">Button-Text *</label>
+        <input id="cta_text" name="cta_text" type="text" required value={p.cta_text ?? 'Anfrage stellen'} />
+        <span class="err"></span>
+      </div>
+      <div class="field" data-field="cta_link">
+        <label for="cta_link">Button-Link</label>
+        <input id="cta_link" name="cta_link" type="text" value={p.cta_link ?? '/kontakt'} placeholder="/kontakt oder https://…" />
+        <span class="err"></span>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button type="submit" class="btn-save">Speichern</button>
+      <span class="status" data-status></span>
+      <a class="preview-link" href="/" target="_blank">Vorschau ↗</a>
+    </div>
+  </form>
+</DashboardLayout>

@@ -49,6 +49,9 @@ export interface PageContent {
   hero_title: string;
   hero_text: string;
   hero_image?: string;
+  /** Primary hero button (home page). */
+  cta_text?: string;
+  cta_link?: string;
 }
 
 export interface SiteContent {

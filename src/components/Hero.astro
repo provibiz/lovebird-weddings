@@ -33,7 +33,7 @@ const heroImage = page.hero_image ?? '/assets/images/hero.jpg';
         </h1>
         <p class="lead">{page.hero_text}</p>
         <div class="hero-meta">
-          <a href="/kontakt" class="cta cta-solid">Anfrage stellen</a>
+          <a href={page.cta_link ?? '/kontakt'} class="cta cta-solid">{page.cta_text ?? 'Anfrage stellen'}</a>
           <a href="/portfolio" class="cta">Portfolio ansehen</a>
         </div>
       </div>

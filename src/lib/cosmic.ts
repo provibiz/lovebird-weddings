@@ -114,6 +114,135 @@ function mapPage(obj: CosmicObject): PageContent {
   };
 }
 
+// ── Write API (server-side only, called from /api routes) ──────
+interface WriteCreds {
+  bucketSlug?: string;
+  readKey?: string;
+  writeKey?: string;
+}
+
+async function upsertObject(
+  client: any,
+  type: string,
+  slug: string,
+  title: string,
+  metadata: Record<string, any>
+) {
+  const existing = await client.objects
+    .findOne({ type, slug })
+    .props('id')
+    .catch(() => null);
+  const id = (existing as any)?.object?.id;
+  if (id) {
+    await client.objects.updateOne(id, { title, metadata });
+  } else {
+    await client.objects.insertOne({ type, title, slug, metadata });
+  }
+}
+
+/**
+ * Persists one dashboard section to Cosmic. `data` is already Zod-validated.
+ * Returns the slugs touched (for messaging). Throws on Cosmic errors.
+ */
+export async function persistSection(
+  section: string,
+  data: any,
+  creds?: WriteCreds
+): Promise<void> {
+  const client = await writeClient(creds);
+
+  switch (section) {
+    case 'startseite': {
+      await upsertObject(client, 'pages', 'index', 'Startseite', {
+        hero_title: data.hero_title,
+        hero_text: data.hero_text,
+        cta_text: data.cta_text,
+        cta_link: data.cta_link,
+      });
+      break;
+    }
+    case 'seo': {
+      const titleMap: Record<string, string> = {
+        index: 'Startseite',
+        leistungen: 'Leistungen',
+        portfolio: 'Portfolio',
+        brunnenhaus: 'Brunnenhaus',
+        kontakt: 'Kontakt',
+      };
+      await upsertObject(client, 'pages', data.slug, titleMap[data.slug] ?? data.slug, {
+        seo_title: data.seo_title,
+        seo_description: data.seo_description,
+      });
+      break;
+    }
+    case 'kontakt': {
+      const social = data.instagram_url
+        ? [{ label: data.instagram_url.replace(/^https?:\/\/(www\.)?instagram\.com\//, '@'), url: data.instagram_url }]
+        : [];
+      await upsertObject(client, 'site_settings', 'site-settings', 'Website-Einstellungen', {
+        company_name: data.company_name,
+        phone: data.phone,
+        phone_href: data.phone.replace(/[^+\d]/g, ''),
+        email: data.email,
+        address: data.address,
+        opening_hours: data.opening_hours ?? '',
+        social_links: social,
+      });
+      break;
+    }
+    case 'leistungen': {
+      const slugify = (s: string) =>
+        s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      for (const svc of data.services) {
+        const slug = slugify(svc.title);
+        await upsertObject(client, 'services', slug, svc.title, {
+          title: svc.title,
+          description: svc.description,
+          short_description: svc.short_description ?? svc.description,
+        });
+      }
+      break;
+    }
+    case 'faq': {
+      const existing = await client.objects
+        .find({ type: 'faqs' })
+        .props('id,slug')
+        .catch(() => ({ objects: [] }));
+      const existingObjs: Array<{ id: string; slug: string }> = (existing as any)?.objects ?? [];
+      const usedSlugs = new Set<string>();
+      for (let i = 0; i < data.faqs.length; i++) {
+        const f = data.faqs[i];
+        const slug = `faq-${i + 1}`;
+        usedSlugs.add(slug);
+        await upsertObject(client, 'faqs', slug, f.question, {
+          question: f.question,
+          answer: f.answer,
+        });
+      }
+      // remove leftover faqs no longer present
+      for (const obj of existingObjs) {
+        if (!usedSlugs.has(obj.slug)) {
+          await client.objects.deleteOne(obj.id).catch(() => {});
+        }
+      }
+      break;
+    }
+    default:
+      throw new Error(`Unbekannter Bereich: ${section}`);
+  }
+}
+
+/** Optionally trigger a Cloudflare Pages rebuild via a Deploy Hook. */
+export async function triggerCloudflareDeploy(hookUrl?: string): Promise<boolean> {
+  if (!hookUrl) return false;
+  try {
+    const res = await fetch(hookUrl, { method: 'POST' });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ── Public read API ────────────────────────────────────────────
 let cache: SiteContent | null = null;
 

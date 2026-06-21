@@ -1,0 +1,61 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getContent, isCosmicConfigured } from '@/lib/cosmic';
+export const prerender = false;
+
+const content = await getContent();
+const cosmicConfigured = isCosmicConfigured();
+
+const pageOrder = ['index', 'leistungen', 'portfolio', 'brunnenhaus', 'kontakt'];
+const labels: Record<string, string> = {
+  index: 'Startseite',
+  leistungen: 'Leistungen',
+  portfolio: 'Portfolio',
+  brunnenhaus: 'Brunnenhaus',
+  kontakt: 'Kontakt',
+};
+const previews: Record<string, string> = {
+  index: '/',
+  leistungen: '/leistungen',
+  portfolio: '/portfolio',
+  brunnenhaus: '/brunnenhaus',
+  kontakt: '/kontakt',
+};
+---
+<DashboardLayout title="SEO" active="seo" cosmicConfigured={cosmicConfigured}>
+  <h1>SEO</h1>
+  <p class="lead">
+    Seitentitel (max. 60 Zeichen) und Meta-Beschreibung (max. 160 Zeichen) je Seite.
+    Technische Einstellungen wie Canonical, Robots und strukturierte Daten werden automatisch verwaltet.
+  </p>
+
+  {pageOrder.map((slug) => {
+    const p = content.pages[slug];
+    return (
+      <form class="card" data-save-form data-section="seo">
+        <h2>{labels[slug]}</h2>
+        <input type="hidden" name="slug" value={slug} />
+
+        <div class="field" data-field="seo_title">
+          <label for={`seo_title_${slug}`}>SEO-Titel *</label>
+          <input id={`seo_title_${slug}`} name="seo_title" type="text" required maxlength="80" value={p.seo_title} />
+          <span class="counter" data-counter="60" data-for={`seo_title_${slug}`}></span>
+          <span class="err"></span>
+        </div>
+
+        <div class="field" data-field="seo_description">
+          <label for={`seo_desc_${slug}`}>Meta-Beschreibung *</label>
+          <textarea id={`seo_desc_${slug}`} name="seo_description" required maxlength="200">{p.seo_description}</textarea>
+          <span class="counter" data-counter="160" data-for={`seo_desc_${slug}`}></span>
+          <span class="err"></span>
+        </div>
+
+        <div class="save-bar">
+          <button type="submit" class="btn-save">Speichern</button>
+          <span class="status" data-status></span>
+          <a class="preview-link" href={previews[slug]} target="_blank">Vorschau ↗</a>
+        </div>
+      </form>
+    );
+  })}
+</DashboardLayout>

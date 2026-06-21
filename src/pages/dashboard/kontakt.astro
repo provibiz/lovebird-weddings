@@ -1,0 +1,63 @@
+---
+import DashboardLayout from '@/layouts/DashboardLayout.astro';
+import { getContent, isCosmicConfigured } from '@/lib/cosmic';
+export const prerender = false;
+
+const content = await getContent();
+const s = content.site_settings;
+const cosmicConfigured = isCosmicConfigured();
+const instagram = s.social_links[0]?.url ?? '';
+---
+<DashboardLayout title="Kontaktdaten" active="kontakt" cosmicConfigured={cosmicConfigured}>
+  <h1>Kontaktdaten</h1>
+  <p class="lead">Diese Angaben erscheinen im Footer, auf der Kontaktseite und im Impressum.</p>
+
+  <form class="card" data-save-form data-section="kontakt">
+    <h2>Allgemein</h2>
+    <p class="desc">Telefon und E-Mail werden auf Plausibilität geprüft.</p>
+
+    <div class="field" data-field="company_name">
+      <label for="company_name">Firmenname *</label>
+      <input id="company_name" name="company_name" type="text" required value={s.company_name} />
+      <span class="err"></span>
+    </div>
+
+    <div class="row">
+      <div class="field" data-field="phone">
+        <label for="phone">Telefon *</label>
+        <input id="phone" name="phone" type="text" required value={s.phone} />
+        <span class="err"></span>
+      </div>
+      <div class="field" data-field="email">
+        <label for="email">E-Mail *</label>
+        <input id="email" name="email" type="text" required value={s.email} />
+        <span class="err"></span>
+      </div>
+    </div>
+
+    <div class="field" data-field="address">
+      <label for="address">Standort / Einzugsgebiet *</label>
+      <input id="address" name="address" type="text" required value={s.address} />
+      <span class="err"></span>
+    </div>
+
+    <div class="row">
+      <div class="field" data-field="opening_hours">
+        <label for="opening_hours">Hinweis zu Terminen</label>
+        <input id="opening_hours" name="opening_hours" type="text" value={s.opening_hours} />
+        <span class="err"></span>
+      </div>
+      <div class="field" data-field="instagram_url">
+        <label for="instagram_url">Instagram-Link</label>
+        <input id="instagram_url" name="instagram_url" type="text" value={instagram} placeholder="https://instagram.com/…" />
+        <span class="err"></span>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button type="submit" class="btn-save">Speichern</button>
+      <span class="status" data-status></span>
+      <a class="preview-link" href="/kontakt" target="_blank">Vorschau ↗</a>
+    </div>
+  </form>
+</DashboardLayout>

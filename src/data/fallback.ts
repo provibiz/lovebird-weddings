@@ -36,6 +36,8 @@ export const fallbackContent: SiteContent = {
       hero_text:
         'Ihr habt euch gefunden – nun plant ihr den schönsten Tag eures Lebens, voller Liebe, Emotionen und unvergesslicher Momente. Wir gestalten eure Hochzeit so einzigartig wie eure Geschichte: mit perfekter Organisation, kreativen Ideen und Liebe zum Detail.',
       hero_image: '/assets/images/hero.jpg',
+      cta_text: 'Anfrage stellen',
+      cta_link: '/kontakt',
     },
     leistungen: {
       title: 'Leistungen',

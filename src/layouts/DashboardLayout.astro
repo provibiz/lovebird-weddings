@@ -1,0 +1,144 @@
+---
+import '@/styles/dashboard.css';
+interface Props { title: string; active?: string; cosmicConfigured?: boolean }
+const { title, active = '', cosmicConfigured = true } = Astro.props;
+
+const nav = [
+  { href: '/dashboard', label: 'Dashboard', key: 'home' },
+  { href: '/dashboard/startseite', label: 'Startseite', key: 'startseite' },
+  { href: '/dashboard/leistungen', label: 'Leistungen', key: 'leistungen' },
+  { href: '/dashboard/faq', label: 'FAQ', key: 'faq' },
+  { href: '/dashboard/kontakt', label: 'Kontaktdaten', key: 'kontakt' },
+  { href: '/dashboard/seo', label: 'SEO', key: 'seo' },
+];
+---
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>{title} · Lovebird Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@300;400;500&display=swap"
+    />
+  </head>
+  <body>
+    <div class="d-shell">
+      <aside class="d-side">
+        <div class="brand">Lovebird<small>Dashboard</small></div>
+        <div class="hint">Pflege deine Website-Inhalte</div>
+        <nav>
+          {nav.map((n) => (
+            <a href={n.href} class={active === n.key ? 'active' : ''}>{n.label}</a>
+          ))}
+        </nav>
+        <div class="spacer"></div>
+        <a href="/" target="_blank" class="hint" style="text-decoration:underline">Website ansehen ↗</a>
+        <form method="POST" action="/api/logout" style="margin-top:14px">
+          <button type="submit">Abmelden</button>
+        </form>
+      </aside>
+      <main class="d-main">
+        {!cosmicConfigured && (
+          <div class="banner">
+            <strong>Vorschau-Modus:</strong> Cosmic ist noch nicht verbunden. Eingaben werden
+            geprüft, aber noch nicht gespeichert. Sobald die Zugangsdaten hinterlegt sind,
+            funktioniert das Speichern automatisch.
+          </div>
+        )}
+        <slot />
+      </main>
+    </div>
+
+    <script>
+      // Shared save handler for any [data-save-form].
+      // Builds a nested payload from input names like `services[0][title]`.
+      function buildData(form: HTMLFormElement) {
+        const data: any = {};
+        const fields = form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+          '[name]'
+        );
+        fields.forEach((el) => {
+          const name = el.name;
+          const m = name.match(/^([a-zA-Z_]+)\[(\d+)\]\[([a-zA-Z_]+)\]$/);
+          if (m) {
+            const [, arr, idx, key] = m;
+            data[arr] ??= [];
+            data[arr][+idx] ??= {};
+            data[arr][+idx][key] = el.value;
+          } else {
+            data[name] = el.value;
+          }
+        });
+        // compact sparse arrays
+        for (const k of Object.keys(data)) {
+          if (Array.isArray(data[k])) data[k] = data[k].filter(Boolean);
+        }
+        return data;
+      }
+
+      function clearErrors(form: HTMLFormElement) {
+        form.querySelectorAll('.field.has-error').forEach((f) => f.classList.remove('has-error'));
+      }
+
+      function showFieldErrors(form: HTMLFormElement, errs: Record<string, string>) {
+        for (const [path, msg] of Object.entries(errs)) {
+          const el = form.querySelector(`[data-field="${path}"]`) || form.querySelector(`[name="${path}"]`)?.closest('.field');
+          if (el) {
+            el.classList.add('has-error');
+            const e = el.querySelector('.err');
+            if (e) e.textContent = msg;
+          }
+        }
+      }
+
+      document.querySelectorAll<HTMLFormElement>('[data-save-form]').forEach((form) => {
+        const section = form.dataset.section!;
+        const status = form.querySelector<HTMLElement>('[data-status]');
+        const btn = form.querySelector<HTMLButtonElement>('.btn-save');
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          clearErrors(form);
+          if (status) { status.textContent = ''; status.className = 'status'; }
+          btn?.setAttribute('disabled', 'true');
+          try {
+            const res = await fetch('/api/save', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ section, data: buildData(form) }),
+            });
+            const json = await res.json();
+            if (json.ok) {
+              if (status) { status.textContent = json.message ?? 'Gespeichert.'; status.className = 'status ok'; }
+            } else {
+              if (json.fieldErrors) showFieldErrors(form, json.fieldErrors);
+              if (status) { status.textContent = json.error ?? 'Fehler beim Speichern.'; status.className = 'status error'; }
+            }
+          } catch {
+            if (status) { status.textContent = 'Netzwerkfehler. Bitte erneut versuchen.'; status.className = 'status error'; }
+          } finally {
+            btn?.removeAttribute('disabled');
+          }
+        });
+      });
+
+      // live character counters
+      document.querySelectorAll<HTMLElement>('[data-counter]').forEach((counter) => {
+        const max = +(counter.dataset.counter || '0');
+        const input = document.getElementById(counter.dataset.for!) as HTMLInputElement | HTMLTextAreaElement | null;
+        if (!input) return;
+        const update = () => {
+          const len = input.value.length;
+          counter.textContent = `${len} / ${max}`;
+          counter.classList.toggle('over', len > max);
+        };
+        input.addEventListener('input', update);
+        update();
+      });
+    </script>
+  </body>
+</html>
