@@ -1,16 +1,18 @@
 ---
 import type { Faq } from '@/lib/types';
 import { sanitizeHtml } from '@/lib/sanitize';
-interface Props { faqs: Faq[] }
-const { faqs } = Astro.props;
+interface Props { faqs: Faq[]; heading?: boolean }
+const { faqs, heading = true } = Astro.props;
 ---
 {faqs.length > 0 && (
   <section class="faq">
-    <div class="section-head reveal">
-      <span class="eyebrow">Gut zu wissen</span>
-      <h2>Häufige <em style="font-style:italic;color:var(--gold)">Fragen</em></h2>
-      <div class="divider"></div>
-    </div>
+    {heading && (
+      <div class="section-head reveal">
+        <span class="eyebrow">Gut zu wissen</span>
+        <h2>Häufige <em style="font-style:italic;color:var(--gold)">Fragen</em></h2>
+        <div class="divider"></div>
+      </div>
+    )}
     <div class="faq-list">
       {faqs.map((f) => (
         <details class="faq-item reveal">
