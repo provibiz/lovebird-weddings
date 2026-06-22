@@ -56,19 +56,17 @@ function mapSettings(obj: CosmicObject | undefined): SiteSettings {
   const m = obj?.metadata ?? {};
   const fb = fallbackContent.site_settings;
   return {
-    company_name: m.company_name ?? fb.company_name,
-    phone: m.phone ?? fb.phone,
-    phone_href: m.phone_href ?? (m.phone ? m.phone.replace(/[^+\d]/g, '') : fb.phone_href),
-    email: m.email ?? fb.email,
-    address: m.address ?? fb.address,
-    opening_hours: m.opening_hours ?? fb.opening_hours,
-    logo: m.logo?.url ?? m.logo ?? fb.logo,
-    social_links: m.social_links != null && (Array.isArray(m.social_links) || String(m.social_links).trim())
-      ? parseArray(m.social_links)
-      : fb.social_links,
-    default_seo_title: m.default_seo_title ?? fb.default_seo_title,
-    default_seo_description: m.default_seo_description ?? fb.default_seo_description,
-    default_og_image: m.default_og_image?.url ?? m.default_og_image ?? fb.default_og_image,
+    company_name: nz(m.company_name) ?? fb.company_name,
+    phone: nz(m.phone) ?? fb.phone,
+    phone_href: nz(m.phone_href) ?? (nz(m.phone) ? m.phone.replace(/[^+\d]/g, '') : fb.phone_href),
+    email: nz(m.email) ?? fb.email,
+    address: nz(m.address) ?? fb.address,
+    opening_hours: nz(m.opening_hours) ?? fb.opening_hours,
+    logo: img(m.logo) ?? fb.logo,
+    social_links: parseArray(m.social_links).length ? parseArray(m.social_links) : fb.social_links,
+    default_seo_title: nz(m.default_seo_title) ?? fb.default_seo_title,
+    default_seo_description: nz(m.default_seo_description) ?? fb.default_seo_description,
+    default_og_image: img(m.default_og_image) ?? fb.default_og_image,
   };
 }
 
@@ -100,34 +98,39 @@ function mapTestimonial(obj: CosmicObject): Testimonial {
 }
 
 function img(v: any): string | undefined {
-  return v?.url ?? v ?? undefined;
+  const u = v?.url ?? v;
+  return typeof u === 'string' && u.trim() ? u : undefined;
 }
 
-function mapPage(obj: CosmicObject): PageContent {
+/** Non-empty string, else undefined — so empty Cosmic values fall back. */
+function nz(v: any): string | undefined {
+  return typeof v === 'string' && v.trim() ? v : undefined;
+}
+
+// Returns only the keys Cosmic actually filled; getContent merges these over
+// the fallback page, so empty/missing fields keep the bundled defaults.
+function mapPage(obj: CosmicObject): Record<string, any> {
   const m = obj.metadata ?? {};
+  const teasers = parseArray(m.teasers).map((t: any) => ({
+    num: t.num ?? '',
+    title: t.title ?? '',
+    text: t.text ?? '',
+    image: img(t.image) ?? '',
+  }));
   return {
-    title: obj.title ?? '',
     slug: obj.slug ?? '',
-    seo_title: m.seo_title ?? '',
-    seo_description: m.seo_description ?? '',
-    hero_title: m.hero_title ?? '',
-    hero_text: m.hero_text ?? '',
+    seo_title: nz(m.seo_title),
+    seo_description: nz(m.seo_description),
+    hero_title: nz(m.hero_title),
+    hero_text: nz(m.hero_text),
     hero_image: img(m.hero_image),
-    cta_text: m.cta_text ?? undefined,
-    cta_link: m.cta_link ?? undefined,
-    about_title: m.about_title ?? undefined,
-    about_text: m.about_text ?? undefined,
+    cta_text: nz(m.cta_text),
+    cta_link: nz(m.cta_link),
+    about_title: nz(m.about_title),
+    about_text: nz(m.about_text),
     about_image_1: img(m.about_image_1),
     about_image_2: img(m.about_image_2),
-    teasers:
-      m.teasers != null && (Array.isArray(m.teasers) || String(m.teasers).trim())
-        ? parseArray(m.teasers).map((t: any) => ({
-            num: t.num ?? '',
-            title: t.title ?? '',
-            text: t.text ?? '',
-            image: img(t.image) ?? '',
-          }))
-        : undefined,
+    teasers: teasers.length ? teasers : undefined,
   };
 }
 
