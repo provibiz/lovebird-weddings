@@ -159,20 +159,6 @@ async function upsertObject(
   }
 }
 
-/** Insert only when the object does not yet exist (non-destructive seeding). */
-async function insertIfMissing(
-  creds: CosmicCreds,
-  type: string,
-  slug: string,
-  title: string,
-  metadata: Record<string, any>
-): Promise<boolean> {
-  const existing = await rest.findOneObject(creds, type, slug, 'id').catch(() => null);
-  if (existing?.id) return false;
-  await rest.createObject(creds, { type, title, slug, metadata });
-  return true;
-}
-
 // ── Schema definitions (Cosmic Object Types) ───────────────────
 // Cosmic validates that every metadata key is a declared metafield. Image
 // fields are stored as URL strings (text). Array fields (social_links,
@@ -238,83 +224,125 @@ const TYPE_DEFS = [
   },
 ];
 
-/**
- * One-time setup: creates the Object Types (if missing) and seeds them from the
- * bundled fallback content. Existing objects are never overwritten, so it is
- * safe to run again. Returns a summary.
- */
-export async function ensureSchemaAndSeed(creds?: WriteCreds) {
-  const creds2 = resolveWriteCreds(creds);
+interface SeedItem {
+  type: string;
+  slug: string;
+  title: string;
+  metadata: Record<string, any>;
+}
+
+/** Flat list of every object to seed, with metadata ready for Cosmic. */
+function buildSeedItems(): SeedItem[] {
   const fb = fallbackContent;
-
-  // 1) Object Types — create when missing, otherwise refresh metafields so
-  // re-running setup heals types created by earlier (incomplete) attempts.
-  const createdTypes: string[] = [];
-  const existingSlugs = new Set<string>();
-  try {
-    for (const ot of await rest.listObjectTypes(creds2)) existingSlugs.add(ot.slug);
-  } catch {
-    /* ignore – we'll attempt inserts and tolerate failures */
-  }
-  for (const def of TYPE_DEFS) {
-    if (existingSlugs.has(def.slug)) {
-      // Refresh metafields so types from earlier (incomplete) runs gain the
-      // missing keys (e.g. social_links, teasers).
-      await rest.updateObjectType(creds2, def.slug, {
-        title: def.title,
-        singular: def.singular,
-        metafields: def.metafields,
-      });
-    } else {
-      await rest.createObjectType(creds2, def);
-      createdTypes.push(def.slug);
-    }
-  }
-
-  // 2) Seed objects (non-destructive)
-  const seeded = { 'site-settings': 0, pages: 0, services: 0, portfolio: 0, testimonials: 0 };
+  const items: SeedItem[] = [];
   const s = fb.site_settings;
-  if (await insertIfMissing(creds2, 'site-settings', 'site-settings', 'Website-Einstellungen', {
-    company_name: s.company_name, phone: s.phone, phone_href: s.phone_href, email: s.email,
-    address: s.address, opening_hours: s.opening_hours, logo: s.logo ?? '',
-    social_links: JSON.stringify(s.social_links), default_seo_title: s.default_seo_title,
-    default_seo_description: s.default_seo_description, default_og_image: s.default_og_image,
-  })) seeded['site-settings']++;
-
+  items.push({
+    type: 'site-settings', slug: 'site-settings', title: 'Website-Einstellungen',
+    metadata: {
+      company_name: s.company_name, phone: s.phone, phone_href: s.phone_href, email: s.email,
+      address: s.address, opening_hours: s.opening_hours, logo: s.logo ?? '',
+      social_links: JSON.stringify(s.social_links), default_seo_title: s.default_seo_title,
+      default_seo_description: s.default_seo_description, default_og_image: s.default_og_image,
+    },
+  });
   for (const slug of Object.keys(fb.pages)) {
     const p = fb.pages[slug];
-    if (await insertIfMissing(creds2, 'pages', slug, p.title, {
-      seo_title: p.seo_title, seo_description: p.seo_description,
-      hero_title: p.hero_title, hero_text: sanitizeHtml(p.hero_text), hero_image: p.hero_image ?? '',
-      cta_text: p.cta_text ?? '', cta_link: p.cta_link ?? '',
-      about_title: p.about_title ?? '', about_text: sanitizeHtml(p.about_text ?? ''),
-      about_image_1: p.about_image_1 ?? '', about_image_2: p.about_image_2 ?? '',
-      teasers: JSON.stringify((p.teasers ?? []).map((te) => ({ ...te, text: sanitizeHtml(te.text) }))),
-    })) seeded.pages++;
+    items.push({
+      type: 'pages', slug, title: p.title,
+      metadata: {
+        seo_title: p.seo_title, seo_description: p.seo_description,
+        hero_title: p.hero_title, hero_text: sanitizeHtml(p.hero_text), hero_image: p.hero_image ?? '',
+        cta_text: p.cta_text ?? '', cta_link: p.cta_link ?? '',
+        about_title: p.about_title ?? '', about_text: sanitizeHtml(p.about_text ?? ''),
+        about_image_1: p.about_image_1 ?? '', about_image_2: p.about_image_2 ?? '',
+        teasers: JSON.stringify((p.teasers ?? []).map((te) => ({ ...te, text: sanitizeHtml(te.text) }))),
+      },
+    });
   }
-
   for (const svc of fb.services) {
-    if (await insertIfMissing(creds2, 'services', svc.slug, svc.title, {
-      title: svc.title, short_description: svc.short_description,
-      description: sanitizeHtml(svc.description), cta_text: svc.cta_text,
-    })) seeded.services++;
+    items.push({
+      type: 'services', slug: svc.slug, title: svc.title,
+      metadata: {
+        title: svc.title, short_description: svc.short_description,
+        description: sanitizeHtml(svc.description), cta_text: svc.cta_text,
+      },
+    });
+  }
+  fb.portfolio.forEach((it, i) =>
+    items.push({
+      type: 'portfolio', slug: `projekt-${i + 1}`, title: it.name,
+      metadata: { name: it.name, date: it.date, subtitle: it.subtitle, image: it.image },
+    })
+  );
+  fb.testimonials.forEach((te, i) =>
+    items.push({
+      type: 'testimonials', slug: `testi-${i + 1}`, title: te.name,
+      metadata: { name: te.name, text: te.text, rating: te.rating, source: te.source },
+    })
+  );
+  return items;
+}
+
+// Cap on create calls per invocation, to stay under the Cloudflare Workers
+// subrequest limit (50 on the free plan).
+const MAX_CREATES_PER_CALL = 30;
+
+/**
+ * One-time setup, split into bounded steps so each call stays under the
+ * Cloudflare subrequest limit. `step: 'schema'` creates/refreshes the Object
+ * Types; `step: 'content'` seeds objects (non-destructive, resumable). The
+ * dashboard calls schema once, then content repeatedly until `done`.
+ */
+export async function ensureSchemaAndSeed(
+  creds?: WriteCreds,
+  step: 'schema' | 'content' = 'schema'
+) {
+  const creds2 = resolveWriteCreds(creds);
+
+  if (step === 'schema') {
+    const existing = new Set<string>();
+    try {
+      for (const ot of await rest.listObjectTypes(creds2)) existing.add(ot.slug);
+    } catch {
+      /* tolerate – attempt creates below */
+    }
+    const createdTypes: string[] = [];
+    for (const def of TYPE_DEFS) {
+      if (existing.has(def.slug)) {
+        await rest.updateObjectType(creds2, def.slug, {
+          title: def.title, singular: def.singular, metafields: def.metafields,
+        });
+      } else {
+        await rest.createObjectType(creds2, def);
+        createdTypes.push(def.slug);
+      }
+    }
+    return { step, createdTypes, done: true };
   }
 
-  for (let i = 0; i < fb.portfolio.length; i++) {
-    const it = fb.portfolio[i];
-    if (await insertIfMissing(creds2, 'portfolio', `projekt-${i + 1}`, it.name, {
-      name: it.name, date: it.date, subtitle: it.subtitle, image: it.image,
-    })) seeded.portfolio++;
+  // step === 'content'
+  const items = buildSeedItems();
+  const types = [...new Set(items.map((i) => i.type))];
+  const existingByType: Record<string, Set<string>> = {};
+  for (const ty of types) {
+    const objs = await rest.findObjects(creds2, ty, 'slug').catch(() => []);
+    existingByType[ty] = new Set(objs.map((o) => o.slug).filter(Boolean) as string[]);
   }
 
-  for (let i = 0; i < fb.testimonials.length; i++) {
-    const te = fb.testimonials[i];
-    if (await insertIfMissing(creds2, 'testimonials', `testi-${i + 1}`, te.name, {
-      name: te.name, text: te.text, rating: te.rating, source: te.source,
-    })) seeded.testimonials++;
+  let created = 0;
+  let remaining = 0;
+  for (const it of items) {
+    if (existingByType[it.type].has(it.slug)) continue;
+    if (created >= MAX_CREATES_PER_CALL) {
+      remaining++;
+      continue;
+    }
+    await rest.createObject(creds2, {
+      type: it.type, title: it.title, slug: it.slug, metadata: it.metadata,
+    });
+    created++;
   }
-
-  return { createdTypes, seeded };
+  return { step, created, remaining, done: remaining === 0 };
 }
 
 /**

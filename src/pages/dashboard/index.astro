@@ -45,19 +45,37 @@ const tiles = [
 <script>
   const btn = document.querySelector<HTMLButtonElement>('[data-seed]');
   const status = document.querySelector<HTMLElement>('[data-seed-status]');
+  const set = (msg: string, kind = '') => {
+    if (status) { status.textContent = msg; status.className = 'status ' + kind; }
+  };
+  async function seedStep(step: 'schema' | 'content') {
+    const res = await fetch('/api/seed', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ step }),
+    });
+    return res.json();
+  }
   btn?.addEventListener('click', async () => {
     if (!confirm('Cosmic jetzt einrichten und mit den aktuellen Inhalten befüllen?')) return;
     btn.setAttribute('disabled', 'true');
-    if (status) { status.textContent = 'Richte ein…'; status.className = 'status'; }
     try {
-      const res = await fetch('/api/seed', { method: 'POST' });
-      const j = await res.json();
-      if (status) {
-        status.textContent = j.ok ? j.message : (j.error ?? 'Fehler.');
-        status.className = 'status ' + (j.ok ? 'ok' : 'error');
+      set('1/2 · Inhaltstypen anlegen…');
+      const schema = await seedStep('schema');
+      if (!schema.ok) { set(schema.error ?? 'Fehler.', 'error'); return; }
+
+      let total = 0;
+      // content runs in bounded batches until done (subrequest limit safe)
+      for (let pass = 0; pass < 10; pass++) {
+        set(`2/2 · Inhalte anlegen… (${total})`);
+        const content = await seedStep('content');
+        if (!content.ok) { set(content.error ?? 'Fehler.', 'error'); return; }
+        total += content.created ?? 0;
+        if (content.done) break;
       }
+      set(`Fertig ✓ Inhaltstypen bereit, ${total} Inhalte angelegt.`, 'ok');
     } catch {
-      if (status) { status.textContent = 'Netzwerkfehler.'; status.className = 'status error'; }
+      set('Netzwerkfehler.', 'error');
     } finally {
       btn.removeAttribute('disabled');
     }
