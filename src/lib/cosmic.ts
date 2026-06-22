@@ -529,18 +529,19 @@ export async function triggerCloudflareDeploy(hookUrl?: string): Promise<boolean
 }
 
 // ── Public read API ────────────────────────────────────────────
-let cache: SiteContent | null = null;
 
 /**
  * Returns the full site content. Reads from Cosmic when configured,
  * otherwise (or on any error) returns the bundled local fallback so the
  * static site always builds.
+ *
+ * Not cached across requests: the dashboard (SSR) must always reflect the
+ * current Cosmic state after a seed/save. The static build calls this a
+ * handful of times, which is fine (no Workers subrequest limit at build time).
  */
 export async function getContent(): Promise<SiteContent> {
-  if (cache) return cache;
   if (!isCosmicConfigured()) {
-    cache = fallbackContent;
-    return cache;
+    return fallbackContent;
   }
 
   try {
@@ -572,7 +573,7 @@ export async function getContent(): Promise<SiteContent> {
     const testimonialList: CosmicObject[] = testimonials ?? [];
     const portfolioList: CosmicObject[] = portfolio ?? [];
 
-    cache = {
+    return {
       site_settings: mapSettings(settings ?? undefined),
       pages: pageMap,
       services: serviceList.length ? serviceList.map(mapService) : fallbackContent.services,
@@ -584,9 +585,7 @@ export async function getContent(): Promise<SiteContent> {
         ? portfolioList.map(mapPortfolioItem)
         : fallbackContent.portfolio,
     };
-    return cache;
   } catch {
-    cache = fallbackContent;
-    return cache;
+    return fallbackContent;
   }
 }
