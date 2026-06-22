@@ -298,7 +298,8 @@ const MAX_CREATES_PER_CALL = 30;
  */
 export async function ensureSchemaAndSeed(
   creds?: WriteCreds,
-  step: 'schema' | 'content' = 'schema'
+  step: 'schema' | 'content' = 'schema',
+  offset = 0
 ) {
   const creds2 = resolveWriteCreds(creds);
 
@@ -323,29 +324,32 @@ export async function ensureSchemaAndSeed(
     return { step, createdTypes, done: true };
   }
 
-  // step === 'content'
+  // step === 'content' — UPSERT: create missing objects and overwrite existing
+  // ones with the current content, so a single run guarantees the full, correct
+  // dataset (repairs partial/empty objects from earlier aborted runs). Processed
+  // in offset batches to stay under the Cloudflare subrequest limit.
   const items = buildSeedItems();
   const types = [...new Set(items.map((i) => i.type))];
-  const existingByType: Record<string, Set<string>> = {};
+  const idByKey: Record<string, string> = {}; // `${type}:${slug}` → id
   for (const ty of types) {
-    const objs = await rest.findObjects(creds2, ty, 'slug').catch(() => []);
-    existingByType[ty] = new Set(objs.map((o) => o.slug).filter(Boolean) as string[]);
+    const objs = await rest.findObjects(creds2, ty, 'id,slug').catch(() => []);
+    for (const o of objs) if (o.slug && o.id) idByKey[`${ty}:${o.slug}`] = o.id;
   }
 
-  let created = 0;
-  let remaining = 0;
-  for (const it of items) {
-    if (existingByType[it.type].has(it.slug)) continue;
-    if (created >= MAX_CREATES_PER_CALL) {
-      remaining++;
-      continue;
+  const start = Math.max(0, offset);
+  const end = Math.min(items.length, start + MAX_CREATES_PER_CALL);
+  for (let i = start; i < end; i++) {
+    const it = items[i];
+    const id = idByKey[`${it.type}:${it.slug}`];
+    if (id) {
+      await rest.updateObject(creds2, id, { title: it.title, metadata: it.metadata });
+    } else {
+      await rest.createObject(creds2, {
+        type: it.type, title: it.title, slug: it.slug, metadata: it.metadata,
+      });
     }
-    await rest.createObject(creds2, {
-      type: it.type, title: it.title, slug: it.slug, metadata: it.metadata,
-    });
-    created++;
   }
-  return { step, created, remaining, done: remaining === 0 };
+  return { step, written: end - start, nextOffset: end, done: end >= items.length };
 }
 
 /**
@@ -509,15 +513,28 @@ export async function uploadMedia(
 
 export async function deleteMedia(id: string, creds?: WriteCreds): Promise<void> {
   const c = resolveWriteCreds(creds);
-  // Cosmic deletes media by file name; resolve id → name if needed.
-  let name = id;
+  // Resolve the media item and try every identifier Cosmic might accept
+  // (name first, then id), since the delete endpoint varies by identifier.
+  const candidates: string[] = [];
   try {
-    const found = (await rest.listMediaRest(c, 100)).find((m) => m.id === id || m.name === id);
-    if (found?.name) name = found.name;
+    const found = (await rest.listMediaRest(c, 200)).find((m) => m.id === id || m.name === id);
+    if (found?.name) candidates.push(found.name);
+    if (found?.id) candidates.push(found.id);
   } catch {
-    /* fall back to the given id */
+    /* fall back to the given id below */
   }
-  await rest.deleteMediaRest(c, name);
+  if (!candidates.length) candidates.push(id);
+
+  let lastErr: unknown = null;
+  for (const ident of candidates) {
+    try {
+      await rest.deleteMediaRest(c, ident);
+      return;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error('Löschen fehlgeschlagen.');
 }
 
 /** Optionally trigger a Cloudflare Pages rebuild via a Deploy Hook. */

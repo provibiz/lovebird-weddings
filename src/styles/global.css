@@ -318,3 +318,20 @@ footer{background:#14110e;color:var(--ivory);padding:80px 24px 40px}
 .rt strong,.rt b{font-weight:600}
 .service .body .rt{flex:1}
 .hero .lead.rt p{margin-bottom:1em}
+
+/* FAQ */
+.faq-list{max-width:820px;margin:0 auto;padding:0 24px}
+.faq-item{border-bottom:1px solid var(--line)}
+.faq-item summary{
+  list-style:none;cursor:pointer;padding:26px 0;display:flex;align-items:center;
+  justify-content:space-between;gap:20px;font-family:var(--serif);font-size:1.3rem;color:var(--ink);
+}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-icon{position:relative;width:16px;height:16px;flex:0 0 auto}
+.faq-icon::before,.faq-icon::after{content:"";position:absolute;background:var(--gold);transition:.3s}
+.faq-icon::before{top:7px;left:0;right:0;height:1px}
+.faq-icon::after{left:7px;top:0;bottom:0;width:1px}
+.faq-item[open] .faq-icon::after{transform:rotate(90deg);opacity:0}
+.faq-answer{padding:0 0 26px;max-width:680px}
+.faq-answer p{margin:0 0 .8em}
+.faq-answer :last-child{margin-bottom:0}

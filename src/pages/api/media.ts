@@ -69,7 +69,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
     if (!id) return json({ ok: false, error: 'Keine ID angegeben.' }, 400);
     await deleteMedia(id, creds(locals));
     return json({ ok: true });
-  } catch {
-    return json({ ok: false, error: 'Löschen fehlgeschlagen.' }, 502);
+  } catch (err: any) {
+    return json({ ok: false, error: `Löschen fehlgeschlagen: ${err?.message ?? 'unbekannt'}` }, 502);
   }
 };

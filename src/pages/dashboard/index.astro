@@ -28,14 +28,15 @@ const tiles = [
 
   {cosmicConfigured && (
     <div class="card" style="margin-top:32px">
-      <h2>Ersteinrichtung</h2>
+      <h2>Inhalte einrichten / zurücksetzen</h2>
       <p class="desc">
-        Einmalig ausführen: legt im Cosmic-Bucket die Inhaltstypen an und befüllt sie mit den
-        aktuellen Inhalten. Bereits vorhandene Inhalte werden dabei <strong>nicht</strong>
-        überschrieben.
+        Legt die Inhaltstypen an und befüllt sie mit den aktuellen Website-Inhalten.
+        <strong>Achtung:</strong> Bereits in Cosmic gespeicherte Inhalte werden dabei mit
+        dem Standardstand <strong>überschrieben</strong>. Ideal für die Ersteinrichtung
+        oder um einen sauberen Ausgangszustand wiederherzustellen.
       </p>
       <div class="save-bar">
-        <button type="button" class="btn-save" data-seed>Cosmic einrichten &amp; befüllen</button>
+        <button type="button" class="btn-save" data-seed>Inhalte einrichten / zurücksetzen</button>
         <span class="status" data-seed-status></span>
       </div>
     </div>
@@ -48,32 +49,34 @@ const tiles = [
   const set = (msg: string, kind = '') => {
     if (status) { status.textContent = msg; status.className = 'status ' + kind; }
   };
-  async function seedStep(step: 'schema' | 'content') {
+  async function seedStep(step: 'schema' | 'content', offset = 0) {
     const res = await fetch('/api/seed', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ step }),
+      body: JSON.stringify({ step, offset }),
     });
     return res.json();
   }
   btn?.addEventListener('click', async () => {
-    if (!confirm('Cosmic jetzt einrichten und mit den aktuellen Inhalten befüllen?')) return;
+    if (!confirm('Inhalte in Cosmic anlegen bzw. auf den aktuellen Stand der Website setzen? Bestehende Cosmic-Inhalte werden dabei überschrieben.')) return;
     btn.setAttribute('disabled', 'true');
     try {
-      set('1/2 · Inhaltstypen anlegen…');
+      set('1/2 · Inhaltstypen vorbereiten…');
       const schema = await seedStep('schema');
       if (!schema.ok) { set(schema.error ?? 'Fehler.', 'error'); return; }
 
       let total = 0;
-      // content runs in bounded batches until done (subrequest limit safe)
-      for (let pass = 0; pass < 10; pass++) {
-        set(`2/2 · Inhalte anlegen… (${total})`);
-        const content = await seedStep('content');
+      let offset = 0;
+      // content runs in bounded offset batches until done (subrequest-limit safe)
+      for (let pass = 0; pass < 20; pass++) {
+        set(`2/2 · Inhalte schreiben… (${total})`);
+        const content = await seedStep('content', offset);
         if (!content.ok) { set(content.error ?? 'Fehler.', 'error'); return; }
-        total += content.created ?? 0;
+        total += content.written ?? 0;
+        offset = content.nextOffset ?? offset;
         if (content.done) break;
       }
-      set(`Fertig ✓ Inhaltstypen bereit, ${total} Inhalte angelegt.`, 'ok');
+      set(`Fertig ✓ ${total} Inhalte gesetzt. Bitte Website neu veröffentlichen (Speichern löst das aus).`, 'ok');
     } catch {
       set('Netzwerkfehler.', 'error');
     } finally {

@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PageHero from '@/components/PageHero.astro';
 import ContactSection from '@/components/ContactSection.astro';
+import FaqSection from '@/components/FaqSection.astro';
 import { getContent } from '@/lib/cosmic';
 
 const content = await getContent();
@@ -16,5 +17,6 @@ const faqs = content.faqs;
   faqs={faqs}
 >
   <PageHero eyebrow="Lasst uns sprechen" title={page.hero_title} text={page.hero_text} />
+  <FaqSection faqs={faqs} />
   <ContactSection settings={content.site_settings} withHeading={false} />
 </BaseLayout>
