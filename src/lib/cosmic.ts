@@ -593,16 +593,40 @@ export async function getContent(): Promise<SiteContent> {
     const testimonialList: CosmicObject[] = testimonials ?? [];
     const portfolioList: CosmicObject[] = portfolio ?? [];
 
+    // Fill empty fields of Cosmic collection items from the matching fallback
+    // item (by slug). Keeps client edits & deletions authoritative, but partial
+    // objects from earlier runs never show up blank.
+    const fillFrom = <T extends { slug: string }>(items: T[], fb: T[], keys: (keyof T)[]): T[] => {
+      const bySlug = new Map(fb.map((f) => [f.slug, f]));
+      return items.map((it) => {
+        const base = bySlug.get(it.slug);
+        if (!base) return it;
+        const out: any = { ...it };
+        for (const k of keys) {
+          const v = out[k];
+          const empty = v == null || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && !v.length);
+          if (empty) out[k] = (base as any)[k];
+        }
+        return out as T;
+      });
+    };
+
     return {
       site_settings: mapSettings(settings ?? undefined),
       pages: pageMap,
-      services: serviceList.length ? serviceList.map(mapService) : fallbackContent.services,
+      services: serviceList.length
+        ? fillFrom(serviceList.map(mapService), fallbackContent.services, [
+            'title', 'short_description', 'description', 'cta_text', 'benefits',
+          ])
+        : fallbackContent.services,
       faqs: faqList.length ? faqList.map(mapFaq) : fallbackContent.faqs,
       testimonials: testimonialList.length
         ? testimonialList.map(mapTestimonial)
         : fallbackContent.testimonials,
       portfolio: portfolioList.length
-        ? portfolioList.map(mapPortfolioItem)
+        ? fillFrom(portfolioList.map(mapPortfolioItem), fallbackContent.portfolio, [
+            'date', 'name', 'subtitle', 'image',
+          ])
         : fallbackContent.portfolio,
     };
   } catch {
