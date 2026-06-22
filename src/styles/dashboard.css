@@ -107,7 +107,8 @@ a { color: inherit; }
 .status.error { color: var(--d-error); }
 .preview-link { font-size: .82rem; color: var(--d-gold); margin-left: auto; }
 
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+@media (max-width: 520px) { .tiles { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
 .tile {
   background: var(--d-panel); border: 1px solid var(--d-line); border-radius: 10px;
   padding: 22px; text-decoration: none; transition: .2s;
