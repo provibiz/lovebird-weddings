@@ -173,6 +173,144 @@ async function upsertObject(
   }
 }
 
+/** Insert only when the object does not yet exist (non-destructive seeding). */
+async function insertIfMissing(
+  client: any,
+  type: string,
+  slug: string,
+  title: string,
+  metadata: Record<string, any>
+): Promise<boolean> {
+  const existing = await client.objects.findOne({ type, slug }).props('id').catch(() => null);
+  if ((existing as any)?.object?.id) return false;
+  await client.objects.insertOne({ type, title, slug, metadata });
+  return true;
+}
+
+// ── Schema definitions (Cosmic Object Types) ───────────────────
+// Image fields are stored as URL strings (text) because the custom dashboard
+// uses a picker that yields a URL (local /assets path or Cosmic media URL).
+// Array fields (teasers, social_links, benefits) are stored as raw metadata.
+const t = (key: string, title: string) => ({ type: 'text', key, title, value: '' });
+const ta = (key: string, title: string) => ({ type: 'textarea', key, title, value: '' });
+const html = (key: string, title: string) => ({ type: 'html-textarea', key, title, value: '' });
+
+const TYPE_DEFS = [
+  {
+    title: 'Site Settings', slug: 'site-settings', singular: 'Site Setting', emoji: '⚙️',
+    metafields: [
+      t('company_name', 'Company Name'), t('phone', 'Phone'), t('phone_href', 'Phone (href)'),
+      t('email', 'E-Mail'), t('address', 'Address / Region'), t('opening_hours', 'Opening Hours'),
+      t('logo', 'Logo (URL)'), t('default_seo_title', 'Default SEO Title'),
+      ta('default_seo_description', 'Default SEO Description'), t('default_og_image', 'Default OG Image (URL)'),
+    ],
+  },
+  {
+    title: 'Pages', slug: 'pages', singular: 'Page', emoji: '📄',
+    metafields: [
+      t('seo_title', 'SEO Title'), ta('seo_description', 'SEO Description'),
+      ta('hero_title', 'Hero Title'), html('hero_text', 'Hero Text'), t('hero_image', 'Hero Image (URL)'),
+      t('cta_text', 'Button Text'), t('cta_link', 'Button Link'),
+      t('about_title', 'About Title'), html('about_text', 'About Text'),
+      t('about_image_1', 'About Image 1 (URL)'), t('about_image_2', 'About Image 2 (URL)'),
+    ],
+  },
+  {
+    title: 'Services', slug: 'services', singular: 'Service', emoji: '💍',
+    metafields: [
+      t('title', 'Title'), ta('short_description', 'Short Description'),
+      html('description', 'Description'), t('cta_text', 'CTA Text'),
+    ],
+  },
+  {
+    title: 'Portfolio', slug: 'portfolio', singular: 'Portfolio Item', emoji: '📸',
+    metafields: [t('name', 'Couple / Title'), t('date', 'Date'), t('subtitle', 'Subtitle'), t('image', 'Image (URL)')],
+  },
+  {
+    title: 'FAQs', slug: 'faqs', singular: 'FAQ', emoji: '❓',
+    metafields: [t('question', 'Question'), ta('answer', 'Answer')],
+  },
+  {
+    title: 'Testimonials', slug: 'testimonials', singular: 'Testimonial', emoji: '⭐',
+    metafields: [t('name', 'Name'), ta('text', 'Text'), { type: 'number', key: 'rating', title: 'Rating', value: 5 }, t('source', 'Source')],
+  },
+];
+
+/**
+ * One-time setup: creates the Object Types (if missing) and seeds them from the
+ * bundled fallback content. Existing objects are never overwritten, so it is
+ * safe to run again. Returns a summary.
+ */
+export async function ensureSchemaAndSeed(creds?: WriteCreds) {
+  const client = await writeClient(creds);
+  const fb = fallbackContent;
+
+  // 1) Object Types
+  const createdTypes: string[] = [];
+  const existingSlugs = new Set<string>();
+  try {
+    const res: any = await client.objectTypes.find();
+    for (const ot of res?.object_types ?? res?.objects ?? []) existingSlugs.add(ot.slug);
+  } catch {
+    /* ignore – we'll attempt inserts and tolerate failures */
+  }
+  for (const def of TYPE_DEFS) {
+    if (existingSlugs.has(def.slug)) continue;
+    try {
+      await client.objectTypes.insertOne(def as any);
+      createdTypes.push(def.slug);
+    } catch (e: any) {
+      // If it already exists (race / pre-created), keep going.
+      if (!String(e?.message ?? '').toLowerCase().includes('exist')) throw e;
+    }
+  }
+
+  // 2) Seed objects (non-destructive)
+  const seeded = { 'site-settings': 0, pages: 0, services: 0, portfolio: 0, testimonials: 0 };
+  const s = fb.site_settings;
+  if (await insertIfMissing(client, 'site-settings', 'site-settings', 'Website-Einstellungen', {
+    company_name: s.company_name, phone: s.phone, phone_href: s.phone_href, email: s.email,
+    address: s.address, opening_hours: s.opening_hours, logo: s.logo ?? '',
+    social_links: s.social_links, default_seo_title: s.default_seo_title,
+    default_seo_description: s.default_seo_description, default_og_image: s.default_og_image,
+  })) seeded['site-settings']++;
+
+  for (const slug of Object.keys(fb.pages)) {
+    const p = fb.pages[slug];
+    if (await insertIfMissing(client, 'pages', slug, p.title, {
+      seo_title: p.seo_title, seo_description: p.seo_description,
+      hero_title: p.hero_title, hero_text: sanitizeHtml(p.hero_text), hero_image: p.hero_image ?? '',
+      cta_text: p.cta_text ?? '', cta_link: p.cta_link ?? '',
+      about_title: p.about_title ?? '', about_text: sanitizeHtml(p.about_text ?? ''),
+      about_image_1: p.about_image_1 ?? '', about_image_2: p.about_image_2 ?? '',
+      teasers: (p.teasers ?? []).map((te) => ({ ...te, text: sanitizeHtml(te.text) })),
+    })) seeded.pages++;
+  }
+
+  for (const svc of fb.services) {
+    if (await insertIfMissing(client, 'services', svc.slug, svc.title, {
+      title: svc.title, short_description: svc.short_description,
+      description: sanitizeHtml(svc.description), benefits: svc.benefits, cta_text: svc.cta_text,
+    })) seeded.services++;
+  }
+
+  for (let i = 0; i < fb.portfolio.length; i++) {
+    const it = fb.portfolio[i];
+    if (await insertIfMissing(client, 'portfolio', `projekt-${i + 1}`, it.name, {
+      name: it.name, date: it.date, subtitle: it.subtitle, image: it.image,
+    })) seeded.portfolio++;
+  }
+
+  for (let i = 0; i < fb.testimonials.length; i++) {
+    const te = fb.testimonials[i];
+    if (await insertIfMissing(client, 'testimonials', `testi-${i + 1}`, te.name, {
+      name: te.name, text: te.text, rating: te.rating, source: te.source,
+    })) seeded.testimonials++;
+  }
+
+  return { createdTypes, seeded };
+}
+
 /**
  * Persists one dashboard section to Cosmic. `data` is already Zod-validated.
  * Returns the slugs touched (for messaging). Throws on Cosmic errors.
@@ -223,7 +361,7 @@ export async function persistSection(
       const social = data.instagram_url
         ? [{ label: data.instagram_url.replace(/^https?:\/\/(www\.)?instagram\.com\//, '@'), url: data.instagram_url }]
         : [];
-      await upsertObject(client, 'site_settings', 'site-settings', 'Website-Einstellungen', {
+      await upsertObject(client, 'site-settings', 'site-settings', 'Website-Einstellungen', {
         company_name: data.company_name,
         phone: data.phone,
         phone_href: data.phone.replace(/[^+\d]/g, ''),
@@ -387,7 +525,7 @@ export async function getContent(): Promise<SiteContent> {
   try {
     const c = await readClient();
     const [settings, services, faqs, testimonials, pages, portfolio] = await Promise.all([
-      c.objects.findOne({ type: 'site_settings' }).props('slug,title,metadata').catch(() => null),
+      c.objects.findOne({ type: 'site-settings' }).props('slug,title,metadata').catch(() => null),
       c.objects.find({ type: 'services' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
       c.objects.find({ type: 'faqs' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
       c.objects.find({ type: 'testimonials' }).props('slug,title,metadata').catch(() => ({ objects: [] })),

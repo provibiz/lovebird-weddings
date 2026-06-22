@@ -25,4 +25,41 @@ const tiles = [
       </a>
     ))}
   </div>
+
+  {cosmicConfigured && (
+    <div class="card" style="margin-top:32px">
+      <h2>Ersteinrichtung</h2>
+      <p class="desc">
+        Einmalig ausführen: legt im Cosmic-Bucket die Inhaltstypen an und befüllt sie mit den
+        aktuellen Inhalten. Bereits vorhandene Inhalte werden dabei <strong>nicht</strong>
+        überschrieben.
+      </p>
+      <div class="save-bar">
+        <button type="button" class="btn-save" data-seed>Cosmic einrichten &amp; befüllen</button>
+        <span class="status" data-seed-status></span>
+      </div>
+    </div>
+  )}
 </DashboardLayout>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>('[data-seed]');
+  const status = document.querySelector<HTMLElement>('[data-seed-status]');
+  btn?.addEventListener('click', async () => {
+    if (!confirm('Cosmic jetzt einrichten und mit den aktuellen Inhalten befüllen?')) return;
+    btn.setAttribute('disabled', 'true');
+    if (status) { status.textContent = 'Richte ein…'; status.className = 'status'; }
+    try {
+      const res = await fetch('/api/seed', { method: 'POST' });
+      const j = await res.json();
+      if (status) {
+        status.textContent = j.ok ? j.message : (j.error ?? 'Fehler.');
+        status.className = 'status ' + (j.ok ? 'ok' : 'error');
+      }
+    } catch {
+      if (status) { status.textContent = 'Netzwerkfehler.'; status.className = 'status error'; }
+    } finally {
+      btn.removeAttribute('disabled');
+    }
+  });
+</script>
