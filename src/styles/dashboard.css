@@ -177,3 +177,23 @@ a { color: inherit; }
 .media-card .del { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.6); color: #fff; border: 0; border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 1rem; }
 .media-card .del:hover { background: var(--d-error); }
 .media-card .tag { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.5); color: #fff; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; padding: 4px 6px; text-align: center; }
+
+/* mobile: turn the sidebar into a compact top bar (no giant duplicated menu) */
+@media (max-width: 760px) {
+  .d-side {
+    flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 14px 16px;
+  }
+  .d-side .brand { width: 100%; margin-bottom: 4px; font-size: 1.15rem; }
+  .d-side .hint { display: none; }
+  .d-side nav { flex-direction: row; flex-wrap: wrap; gap: 6px; width: 100%; }
+  .d-side nav a {
+    padding: 7px 12px; font-size: .76rem; border-radius: 20px;
+    background: rgba(255,255,255,.06);
+  }
+  .d-side nav a.active { background: var(--d-gold); }
+  .d-side .spacer { display: none; }
+  .d-side > a[target="_blank"] { font-size: .72rem; margin-top: 4px; }
+  .d-side form { width: 100%; margin-top: 4px; }
+  .d-side form button { width: 100%; padding: 9px; }
+}

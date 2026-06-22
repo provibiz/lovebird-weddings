@@ -1,6 +1,8 @@
 import { fallbackContent } from '@/data/fallback';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { stockImages } from '@/data/stock-images';
+import * as rest from '@/lib/cosmic-rest';
+import type { CosmicCreds } from '@/lib/cosmic-rest';
 import type {
   SiteContent,
   SiteSettings,
@@ -15,7 +17,7 @@ import type {
 // ── Environment ────────────────────────────────────────────────
 // In Astro, build-time secrets live on `import.meta.env`. On Cloudflare
 // runtime they arrive via the request `locals.runtime.env`; the API routes
-// pass those through to the write client explicitly.
+// pass those through explicitly.
 const env = import.meta.env;
 
 const BUCKET = env.COSMIC_BUCKET_SLUG as string | undefined;
@@ -26,35 +28,25 @@ export function isCosmicConfigured(): boolean {
   return Boolean(BUCKET && READ_KEY);
 }
 
-// The Cosmic SDK references browser globals at import time, so it is loaded
-// dynamically — never during the static prerender of the public pages.
-async function createBucketClient(
-  config: { bucketSlug: string; readKey: string; writeKey?: string }
-) {
-  const sdk = await import('@cosmicjs/sdk');
-  return sdk.createBucketClient(config);
-}
-
-async function readClient() {
-  return createBucketClient({ bucketSlug: BUCKET!, readKey: READ_KEY! });
-}
-
-/**
- * Write client. Only ever instantiated inside server-side /api routes.
- * Credentials may be passed in from the Cloudflare runtime env.
- */
-export async function writeClient(creds?: {
+export interface WriteCreds {
   bucketSlug?: string;
   readKey?: string;
   writeKey?: string;
-}) {
+}
+
+function readCreds(): CosmicCreds {
+  return { bucketSlug: BUCKET!, readKey: READ_KEY! };
+}
+
+/** Resolve full credentials for write operations (runtime env or build env). */
+function resolveWriteCreds(creds?: WriteCreds): CosmicCreds {
   const bucketSlug = creds?.bucketSlug ?? BUCKET;
   const readKey = creds?.readKey ?? READ_KEY;
   const writeKey = creds?.writeKey ?? WRITE_KEY;
   if (!bucketSlug || !readKey || !writeKey) {
     throw new Error('Cosmic write credentials are not configured.');
   }
-  return createBucketClient({ bucketSlug, readKey, writeKey });
+  return { bucketSlug, readKey, writeKey };
 }
 
 // ── Mapping helpers (Cosmic object metadata → typed content) ───
@@ -148,42 +140,33 @@ function mapPortfolioItem(obj: CosmicObject): PortfolioItem {
 }
 
 // ── Write API (server-side only, called from /api routes) ──────
-interface WriteCreds {
-  bucketSlug?: string;
-  readKey?: string;
-  writeKey?: string;
-}
 
 async function upsertObject(
-  client: any,
+  creds: CosmicCreds,
   type: string,
   slug: string,
   title: string,
   metadata: Record<string, any>
 ) {
-  const existing = await client.objects
-    .findOne({ type, slug })
-    .props('id')
-    .catch(() => null);
-  const id = (existing as any)?.object?.id;
-  if (id) {
-    await client.objects.updateOne(id, { title, metadata });
+  const existing = await rest.findOneObject(creds, type, slug, 'id').catch(() => null);
+  if (existing?.id) {
+    await rest.updateObject(creds, existing.id, { title, metadata });
   } else {
-    await client.objects.insertOne({ type, title, slug, metadata });
+    await rest.createObject(creds, { type, title, slug, metadata });
   }
 }
 
 /** Insert only when the object does not yet exist (non-destructive seeding). */
 async function insertIfMissing(
-  client: any,
+  creds: CosmicCreds,
   type: string,
   slug: string,
   title: string,
   metadata: Record<string, any>
 ): Promise<boolean> {
-  const existing = await client.objects.findOne({ type, slug }).props('id').catch(() => null);
-  if ((existing as any)?.object?.id) return false;
-  await client.objects.insertOne({ type, title, slug, metadata });
+  const existing = await rest.findOneObject(creds, type, slug, 'id').catch(() => null);
+  if (existing?.id) return false;
+  await rest.createObject(creds, { type, title, slug, metadata });
   return true;
 }
 
@@ -242,22 +225,21 @@ const TYPE_DEFS = [
  * safe to run again. Returns a summary.
  */
 export async function ensureSchemaAndSeed(creds?: WriteCreds) {
-  const client = await writeClient(creds);
+  const creds2 = resolveWriteCreds(creds);
   const fb = fallbackContent;
 
   // 1) Object Types
   const createdTypes: string[] = [];
   const existingSlugs = new Set<string>();
   try {
-    const res: any = await client.objectTypes.find();
-    for (const ot of res?.object_types ?? res?.objects ?? []) existingSlugs.add(ot.slug);
+    for (const ot of await rest.listObjectTypes(creds2)) existingSlugs.add(ot.slug);
   } catch {
     /* ignore – we'll attempt inserts and tolerate failures */
   }
   for (const def of TYPE_DEFS) {
     if (existingSlugs.has(def.slug)) continue;
     try {
-      await client.objectTypes.insertOne(def as any);
+      await rest.createObjectType(creds2, def);
       createdTypes.push(def.slug);
     } catch (e: any) {
       // If it already exists (race / pre-created), keep going.
@@ -268,7 +250,7 @@ export async function ensureSchemaAndSeed(creds?: WriteCreds) {
   // 2) Seed objects (non-destructive)
   const seeded = { 'site-settings': 0, pages: 0, services: 0, portfolio: 0, testimonials: 0 };
   const s = fb.site_settings;
-  if (await insertIfMissing(client, 'site-settings', 'site-settings', 'Website-Einstellungen', {
+  if (await insertIfMissing(creds2, 'site-settings', 'site-settings', 'Website-Einstellungen', {
     company_name: s.company_name, phone: s.phone, phone_href: s.phone_href, email: s.email,
     address: s.address, opening_hours: s.opening_hours, logo: s.logo ?? '',
     social_links: s.social_links, default_seo_title: s.default_seo_title,
@@ -277,7 +259,7 @@ export async function ensureSchemaAndSeed(creds?: WriteCreds) {
 
   for (const slug of Object.keys(fb.pages)) {
     const p = fb.pages[slug];
-    if (await insertIfMissing(client, 'pages', slug, p.title, {
+    if (await insertIfMissing(creds2, 'pages', slug, p.title, {
       seo_title: p.seo_title, seo_description: p.seo_description,
       hero_title: p.hero_title, hero_text: sanitizeHtml(p.hero_text), hero_image: p.hero_image ?? '',
       cta_text: p.cta_text ?? '', cta_link: p.cta_link ?? '',
@@ -288,7 +270,7 @@ export async function ensureSchemaAndSeed(creds?: WriteCreds) {
   }
 
   for (const svc of fb.services) {
-    if (await insertIfMissing(client, 'services', svc.slug, svc.title, {
+    if (await insertIfMissing(creds2, 'services', svc.slug, svc.title, {
       title: svc.title, short_description: svc.short_description,
       description: sanitizeHtml(svc.description), benefits: svc.benefits, cta_text: svc.cta_text,
     })) seeded.services++;
@@ -296,14 +278,14 @@ export async function ensureSchemaAndSeed(creds?: WriteCreds) {
 
   for (let i = 0; i < fb.portfolio.length; i++) {
     const it = fb.portfolio[i];
-    if (await insertIfMissing(client, 'portfolio', `projekt-${i + 1}`, it.name, {
+    if (await insertIfMissing(creds2, 'portfolio', `projekt-${i + 1}`, it.name, {
       name: it.name, date: it.date, subtitle: it.subtitle, image: it.image,
     })) seeded.portfolio++;
   }
 
   for (let i = 0; i < fb.testimonials.length; i++) {
     const te = fb.testimonials[i];
-    if (await insertIfMissing(client, 'testimonials', `testi-${i + 1}`, te.name, {
+    if (await insertIfMissing(creds2, 'testimonials', `testi-${i + 1}`, te.name, {
       name: te.name, text: te.text, rating: te.rating, source: te.source,
     })) seeded.testimonials++;
   }
@@ -320,11 +302,11 @@ export async function persistSection(
   data: any,
   creds?: WriteCreds
 ): Promise<void> {
-  const client = await writeClient(creds);
+  const creds2 = resolveWriteCreds(creds);
 
   switch (section) {
     case 'startseite': {
-      await upsertObject(client, 'pages', 'index', 'Startseite', {
+      await upsertObject(creds2, 'pages', 'index', 'Startseite', {
         hero_title: data.hero_title,
         hero_text: sanitizeHtml(data.hero_text),
         cta_text: data.cta_text,
@@ -351,7 +333,7 @@ export async function persistSection(
         brunnenhaus: 'Brunnenhaus',
         kontakt: 'Kontakt',
       };
-      await upsertObject(client, 'pages', data.slug, titleMap[data.slug] ?? data.slug, {
+      await upsertObject(creds2, 'pages', data.slug, titleMap[data.slug] ?? data.slug, {
         seo_title: data.seo_title,
         seo_description: data.seo_description,
       });
@@ -361,7 +343,7 @@ export async function persistSection(
       const social = data.instagram_url
         ? [{ label: data.instagram_url.replace(/^https?:\/\/(www\.)?instagram\.com\//, '@'), url: data.instagram_url }]
         : [];
-      await upsertObject(client, 'site-settings', 'site-settings', 'Website-Einstellungen', {
+      await upsertObject(creds2, 'site-settings', 'site-settings', 'Website-Einstellungen', {
         company_name: data.company_name,
         phone: data.phone,
         phone_href: data.phone.replace(/[^+\d]/g, ''),
@@ -377,7 +359,7 @@ export async function persistSection(
         s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       for (const svc of data.services) {
         const slug = slugify(svc.title);
-        await upsertObject(client, 'services', slug, svc.title, {
+        await upsertObject(creds2, 'services', slug, svc.title, {
           title: svc.title,
           description: sanitizeHtml(svc.description),
           short_description: svc.short_description ?? '',
@@ -386,41 +368,33 @@ export async function persistSection(
       break;
     }
     case 'faq': {
-      const existing = await client.objects
-        .find({ type: 'faqs' })
-        .props('id,slug')
-        .catch(() => ({ objects: [] }));
-      const existingObjs: Array<{ id: string; slug: string }> = (existing as any)?.objects ?? [];
+      const existingObjs = await rest.findObjects(creds2, 'faqs', 'id,slug').catch(() => []);
       const usedSlugs = new Set<string>();
       for (let i = 0; i < data.faqs.length; i++) {
         const f = data.faqs[i];
         const slug = `faq-${i + 1}`;
         usedSlugs.add(slug);
-        await upsertObject(client, 'faqs', slug, f.question, {
+        await upsertObject(creds2, 'faqs', slug, f.question, {
           question: f.question,
           answer: f.answer,
         });
       }
       // remove leftover faqs no longer present
       for (const obj of existingObjs) {
-        if (!usedSlugs.has(obj.slug)) {
-          await client.objects.deleteOne(obj.id).catch(() => {});
+        if (obj.id && obj.slug && !usedSlugs.has(obj.slug)) {
+          await rest.deleteObject(creds2, obj.id).catch(() => {});
         }
       }
       break;
     }
     case 'portfolio': {
-      const existing = await client.objects
-        .find({ type: 'portfolio' })
-        .props('id,slug')
-        .catch(() => ({ objects: [] }));
-      const existingObjs: Array<{ id: string; slug: string }> = (existing as any)?.objects ?? [];
+      const existingObjs = await rest.findObjects(creds2, 'portfolio', 'id,slug').catch(() => []);
       const usedSlugs = new Set<string>();
       for (let i = 0; i < data.items.length; i++) {
         const it = data.items[i];
         const slug = `projekt-${i + 1}`;
         usedSlugs.add(slug);
-        await upsertObject(client, 'portfolio', slug, it.name, {
+        await upsertObject(creds2, 'portfolio', slug, it.name, {
           name: it.name,
           date: it.date ?? '',
           subtitle: it.subtitle ?? '',
@@ -428,8 +402,8 @@ export async function persistSection(
         });
       }
       for (const obj of existingObjs) {
-        if (!usedSlugs.has(obj.slug)) {
-          await client.objects.deleteOne(obj.id).catch(() => {});
+        if (obj.id && obj.slug && !usedSlugs.has(obj.slug)) {
+          await rest.deleteObject(creds2, obj.id).catch(() => {});
         }
       }
       break;
@@ -452,12 +426,11 @@ export async function listMedia(creds?: WriteCreds): Promise<MediaItem[]> {
 
   if (!isCosmicConfigured()) return stock;
   try {
-    const c = await readClient();
-    const res = await c.media.find({}).props('id,name,url,imgix_url').limit(100).catch(() => null);
-    const uploaded: MediaItem[] = ((res as any)?.media ?? []).map((m: any) => ({
-      id: m.id ?? m.name,
-      name: m.original_name ?? m.name,
-      url: m.imgix_url ?? m.url,
+    const media = await rest.listMediaRest(readCreds(), 100);
+    const uploaded: MediaItem[] = media.map((m) => ({
+      id: m.id ?? m.name ?? '',
+      name: m.original_name ?? m.name ?? '',
+      url: m.imgix_url ?? m.url ?? '',
       stock: false,
     }));
     return [...uploaded, ...stock];
@@ -470,30 +443,26 @@ export async function uploadMedia(
   file: { buffer: ArrayBuffer; name: string; type: string },
   creds?: WriteCreds
 ): Promise<MediaItem> {
-  const client = await writeClient(creds);
-  const media_object = {
-    originalname: file.name,
-    buffer: new Uint8Array(file.buffer),
-    type: file.type,
+  const m = await rest.uploadMediaRest(resolveWriteCreds(creds), file);
+  return {
+    id: m.id ?? m.name ?? '',
+    name: m.original_name ?? m.name ?? '',
+    url: m.imgix_url ?? m.url ?? '',
+    stock: false,
   };
-  const res = await client.media.insertOne({ media: media_object as any });
-  const m = (res as any)?.media ?? {};
-  return { id: m.id ?? m.name, name: m.original_name ?? m.name, url: m.imgix_url ?? m.url, stock: false };
 }
 
 export async function deleteMedia(id: string, creds?: WriteCreds): Promise<void> {
-  const client = await writeClient(creds);
+  const c = resolveWriteCreds(creds);
   // Cosmic deletes media by file name; resolve id → name if needed.
   let name = id;
   try {
-    const c = await readClient();
-    const res = await c.media.find({}).props('id,name').limit(100).catch(() => null);
-    const found = ((res as any)?.media ?? []).find((m: any) => m.id === id || m.name === id);
-    if (found) name = found.name;
+    const found = (await rest.listMediaRest(c, 100)).find((m) => m.id === id || m.name === id);
+    if (found?.name) name = found.name;
   } catch {
     /* fall back to the given id */
   }
-  await client.media.deleteOne(name);
+  await rest.deleteMediaRest(c, name);
 }
 
 /** Optionally trigger a Cloudflare Pages rebuild via a Deploy Hook. */
@@ -523,17 +492,18 @@ export async function getContent(): Promise<SiteContent> {
   }
 
   try {
-    const c = await readClient();
-    const [settings, services, faqs, testimonials, pages, portfolio] = await Promise.all([
-      c.objects.findOne({ type: 'site-settings' }).props('slug,title,metadata').catch(() => null),
-      c.objects.find({ type: 'services' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
-      c.objects.find({ type: 'faqs' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
-      c.objects.find({ type: 'testimonials' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
-      c.objects.find({ type: 'pages' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
-      c.objects.find({ type: 'portfolio' }).props('slug,title,metadata').catch(() => ({ objects: [] })),
+    const creds = readCreds();
+    const [settingsList, services, faqs, testimonials, pages, portfolio] = await Promise.all([
+      rest.findObjects(creds, 'site-settings', 'slug,title,metadata', 1).catch(() => []),
+      rest.findObjects(creds, 'services', 'slug,title,metadata').catch(() => []),
+      rest.findObjects(creds, 'faqs', 'slug,title,metadata').catch(() => []),
+      rest.findObjects(creds, 'testimonials', 'slug,title,metadata').catch(() => []),
+      rest.findObjects(creds, 'pages', 'slug,title,metadata').catch(() => []),
+      rest.findObjects(creds, 'portfolio', 'slug,title,metadata').catch(() => []),
     ]);
+    const settings = settingsList[0] ?? null;
 
-    const pageList: CosmicObject[] = (pages as any)?.objects ?? [];
+    const pageList: CosmicObject[] = pages ?? [];
     const pageMap: Record<string, PageContent> = { ...fallbackContent.pages };
     for (const p of pageList) {
       const mapped = mapPage(p);
@@ -545,13 +515,13 @@ export async function getContent(): Promise<SiteContent> {
       pageMap[mapped.slug] = { ...fallbackContent.pages[mapped.slug], ...defined } as PageContent;
     }
 
-    const serviceList: CosmicObject[] = (services as any)?.objects ?? [];
-    const faqList: CosmicObject[] = (faqs as any)?.objects ?? [];
-    const testimonialList: CosmicObject[] = (testimonials as any)?.objects ?? [];
-    const portfolioList: CosmicObject[] = (portfolio as any)?.objects ?? [];
+    const serviceList: CosmicObject[] = services ?? [];
+    const faqList: CosmicObject[] = faqs ?? [];
+    const testimonialList: CosmicObject[] = testimonials ?? [];
+    const portfolioList: CosmicObject[] = portfolio ?? [];
 
     cache = {
-      site_settings: mapSettings((settings as any)?.object),
+      site_settings: mapSettings(settings ?? undefined),
       pages: pageMap,
       services: serviceList.length ? serviceList.map(mapService) : fallbackContent.services,
       faqs: faqList.length ? faqList.map(mapFaq) : fallbackContent.faqs,
