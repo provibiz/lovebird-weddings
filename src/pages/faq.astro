@@ -1,0 +1,33 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHero from '@/components/PageHero.astro';
+import FaqSection from '@/components/FaqSection.astro';
+import { getContent } from '@/lib/cosmic';
+
+const content = await getContent();
+const faqs = content.faqs;
+const s = content.site_settings;
+---
+<BaseLayout
+  title={`Häufige Fragen — ${s.company_name}`}
+  description="Antworten auf häufige Fragen rund um Hochzeitsplanung, Ablauf und Zusammenarbeit mit Lovebird Weddings."
+  settings={s}
+  active="faq"
+  faqs={faqs}
+>
+  <PageHero
+    eyebrow="Gut zu wissen"
+    title="Häufige *Fragen*"
+    text="Hier findet ihr Antworten auf die Fragen, die uns am häufigsten gestellt werden. Eure Frage ist nicht dabei? Schreibt uns einfach."
+  />
+
+  {faqs.length > 0 ? (
+    <FaqSection faqs={faqs} />
+  ) : (
+    <section class="center">
+      <div class="narrow reveal">
+        <p>Hier entstehen in Kürze Antworten auf häufige Fragen. Bei Fragen erreicht ihr uns jederzeit über die <a href="/kontakt" style="color:var(--gold);border-bottom:1px solid var(--gold)">Kontaktseite</a>.</p>
+      </div>
+    </section>
+  )}
+</BaseLayout>
