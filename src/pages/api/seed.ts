@@ -16,9 +16,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
     return json({ ok: false, error: 'Cosmic ist nicht konfiguriert (COSMIC_* fehlen).' }, 503);
   }
   let step: 'schema' | 'content' = 'schema';
+  let offset = 0;
   try {
-    const body = (await request.json().catch(() => ({}))) as { step?: string };
+    const body = (await request.json().catch(() => ({}))) as { step?: string; offset?: number };
     if (body.step === 'content') step = 'content';
+    if (typeof body.offset === 'number') offset = body.offset;
   } catch {
     /* default schema */
   }
@@ -30,7 +32,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
         readKey: env.COSMIC_READ_KEY,
         writeKey: env.COSMIC_WRITE_KEY,
       },
-      step
+      step,
+      offset
     );
     return json({ ok: true, ...result });
   } catch (err: any) {
