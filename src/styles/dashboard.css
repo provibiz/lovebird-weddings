@@ -169,13 +169,13 @@ a { color: inherit; }
 .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; padding: 16px 22px 24px; overflow-y: auto; }
 .media-thumb { border: 1px solid var(--d-line); border-radius: 8px; overflow: hidden; cursor: pointer; background: #fbf8f3; padding: 0; display: block; transition: .15s; }
 .media-thumb:hover { border-color: var(--d-gold); transform: translateY(-2px); box-shadow: 0 6px 18px -10px rgba(27,25,22,.5); }
-.media-thumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
-@media (max-width: 520px) { .media-grid { grid-template-columns: repeat(2, 1fr); } }
+.media-thumb img { width: 100%; height: 150px; object-fit: cover; display: block; }
+@media (max-width: 520px) { .media-grid { grid-template-columns: repeat(2, 1fr); } .media-thumb img { height: 120px; } }
 
 /* media management page */
 .media-manage { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
 .media-card { border: 1px solid var(--d-line); border-radius: 8px; overflow: hidden; background: #fff; position: relative; }
-.media-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.media-card img { width: 100%; height: 150px; object-fit: cover; display: block; }
 .media-card .del { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.6); color: #fff; border: 0; border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 1rem; }
 .media-card .del:hover { background: var(--d-error); }
 .media-card .tag { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.5); color: #fff; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; padding: 4px 6px; text-align: center; }
