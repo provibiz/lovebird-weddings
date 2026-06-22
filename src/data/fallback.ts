@@ -32,7 +32,7 @@ export const fallbackContent: SiteContent = {
         'Lovebird Weddings — Individuelle Hochzeitsplanung & Wedding Day Management',
       seo_description:
         'Sarah von Lovebird Weddings plant eure Traumhochzeit zwischen Halle (Saale) und Leipzig – mit Liebe zum Detail, kreativen Ideen und perfekter Organisation.',
-      hero_title: 'Eure Liebe,\neure Geschichte,\neure Traumhochzeit.',
+      hero_title: 'Eure Liebe,\neure Geschichte,\n*eure Traumhochzeit.*',
       hero_text:
         'Ihr habt euch gefunden – nun plant ihr den schönsten Tag eures Lebens, voller Liebe, Emotionen und unvergesslicher Momente. Wir gestalten eure Hochzeit so einzigartig wie eure Geschichte: mit perfekter Organisation, kreativen Ideen und Liebe zum Detail.',
       hero_image: '/assets/images/hero.jpg',

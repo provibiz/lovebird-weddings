@@ -4,9 +4,17 @@ import { sanitizeHtml } from '@/lib/sanitize';
 interface Props { page: PageContent }
 const { page } = Astro.props;
 
-// hero_title uses newlines; the final line is emphasised (italic gold) to
-// match the approved template.
-const lines = page.hero_title.split('\n');
+// hero_title: newlines → <br>, and *word* → italic gold (matches the template;
+// the .hero h1 em CSS rule applies the gold colouring).
+function renderTitle(raw: string): string {
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return raw
+    .split('\n')
+    .map((line) => escape(line).replace(/\*([^*]+)\*/g, '<em>$1</em>'))
+    .join('<br>');
+}
+const titleHtml = renderTitle(page.hero_title);
 const heroImage = page.hero_image ?? '/assets/images/hero.jpg';
 const heroTextHtml = sanitizeHtml(page.hero_text);
 ---
@@ -24,15 +32,7 @@ const heroTextHtml = sanitizeHtml(page.hero_text);
     <div class="hero-grid">
       <div class="reveal">
         <span class="eyebrow">Lovebird Weddings &amp; Events</span>
-        <h1>
-          {lines.map((line, i) =>
-            i === lines.length - 1 ? (
-              <em>{line}</em>
-            ) : (
-              <>{line}<br /></>
-            )
-          )}
-        </h1>
+        <h1 set:html={titleHtml}></h1>
         <div class="lead rt" set:html={heroTextHtml}></div>
         <div class="hero-meta">
           <a href={page.cta_link ?? '/kontakt'} class="cta cta-solid">{page.cta_text ?? 'Anfrage stellen'}</a>
