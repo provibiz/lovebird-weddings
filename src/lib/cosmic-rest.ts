@@ -129,6 +129,16 @@ export async function createObjectType(creds: CosmicCreds, def: any): Promise<vo
   await readJson(res, `POST object-type(${def.slug})`);
 }
 
+/** Update an existing object type (e.g. to add/refresh metafields). */
+export async function updateObjectType(creds: CosmicCreds, slug: string, def: any): Promise<void> {
+  const res = await fetch(bucketUrl(creds, `/object-types/${slug}`), {
+    method: 'PATCH',
+    headers: writeHeaders(creds),
+    body: JSON.stringify(def),
+  });
+  await readJson(res, `PATCH object-type(${slug})`);
+}
+
 // ── Media ──────────────────────────────────────────────────────
 export interface CosmicMedia {
   id?: string;

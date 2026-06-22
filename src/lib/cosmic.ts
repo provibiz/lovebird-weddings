@@ -63,7 +63,9 @@ function mapSettings(obj: CosmicObject | undefined): SiteSettings {
     address: m.address ?? fb.address,
     opening_hours: m.opening_hours ?? fb.opening_hours,
     logo: m.logo?.url ?? m.logo ?? fb.logo,
-    social_links: Array.isArray(m.social_links) ? m.social_links : fb.social_links,
+    social_links: m.social_links != null && (Array.isArray(m.social_links) || String(m.social_links).trim())
+      ? parseArray(m.social_links)
+      : fb.social_links,
     default_seo_title: m.default_seo_title ?? fb.default_seo_title,
     default_seo_description: m.default_seo_description ?? fb.default_seo_description,
     default_og_image: m.default_og_image?.url ?? m.default_og_image ?? fb.default_og_image,
@@ -117,14 +119,15 @@ function mapPage(obj: CosmicObject): PageContent {
     about_text: m.about_text ?? undefined,
     about_image_1: img(m.about_image_1),
     about_image_2: img(m.about_image_2),
-    teasers: Array.isArray(m.teasers)
-      ? m.teasers.map((t: any) => ({
-          num: t.num ?? '',
-          title: t.title ?? '',
-          text: t.text ?? '',
-          image: img(t.image) ?? '',
-        }))
-      : undefined,
+    teasers:
+      m.teasers != null && (Array.isArray(m.teasers) || String(m.teasers).trim())
+        ? parseArray(m.teasers).map((t: any) => ({
+            num: t.num ?? '',
+            title: t.title ?? '',
+            text: t.text ?? '',
+            image: img(t.image) ?? '',
+          }))
+        : undefined,
   };
 }
 
@@ -171,12 +174,26 @@ async function insertIfMissing(
 }
 
 // ── Schema definitions (Cosmic Object Types) ───────────────────
-// Image fields are stored as URL strings (text) because the custom dashboard
-// uses a picker that yields a URL (local /assets path or Cosmic media URL).
-// Array fields (teasers, social_links, benefits) are stored as raw metadata.
+// Cosmic validates that every metadata key is a declared metafield. Image
+// fields are stored as URL strings (text). Array fields (social_links,
+// teasers) are stored as JSON strings in a textarea metafield, parsed on read.
 const t = (key: string, title: string) => ({ type: 'text', key, title, value: '' });
 const ta = (key: string, title: string) => ({ type: 'textarea', key, title, value: '' });
 const html = (key: string, title: string) => ({ type: 'html-textarea', key, title, value: '' });
+
+/** Parse a JSON-string array field (resilient to already-array or empty). */
+function parseArray<T = any>(v: any): T[] {
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string' && v.trim()) {
+    try {
+      const p = JSON.parse(v);
+      return Array.isArray(p) ? p : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
 
 const TYPE_DEFS = [
   {
@@ -186,6 +203,7 @@ const TYPE_DEFS = [
       t('email', 'E-Mail'), t('address', 'Address / Region'), t('opening_hours', 'Opening Hours'),
       t('logo', 'Logo (URL)'), t('default_seo_title', 'Default SEO Title'),
       ta('default_seo_description', 'Default SEO Description'), t('default_og_image', 'Default OG Image (URL)'),
+      ta('social_links', 'Social Links (JSON)'),
     ],
   },
   {
@@ -196,6 +214,7 @@ const TYPE_DEFS = [
       t('cta_text', 'Button Text'), t('cta_link', 'Button Link'),
       t('about_title', 'About Title'), html('about_text', 'About Text'),
       t('about_image_1', 'About Image 1 (URL)'), t('about_image_2', 'About Image 2 (URL)'),
+      ta('teasers', 'Teasers (JSON)'),
     ],
   },
   {
@@ -228,7 +247,8 @@ export async function ensureSchemaAndSeed(creds?: WriteCreds) {
   const creds2 = resolveWriteCreds(creds);
   const fb = fallbackContent;
 
-  // 1) Object Types
+  // 1) Object Types — create when missing, otherwise refresh metafields so
+  // re-running setup heals types created by earlier (incomplete) attempts.
   const createdTypes: string[] = [];
   const existingSlugs = new Set<string>();
   try {
@@ -237,13 +257,17 @@ export async function ensureSchemaAndSeed(creds?: WriteCreds) {
     /* ignore – we'll attempt inserts and tolerate failures */
   }
   for (const def of TYPE_DEFS) {
-    if (existingSlugs.has(def.slug)) continue;
-    try {
+    if (existingSlugs.has(def.slug)) {
+      // Refresh metafields so types from earlier (incomplete) runs gain the
+      // missing keys (e.g. social_links, teasers).
+      await rest.updateObjectType(creds2, def.slug, {
+        title: def.title,
+        singular: def.singular,
+        metafields: def.metafields,
+      });
+    } else {
       await rest.createObjectType(creds2, def);
       createdTypes.push(def.slug);
-    } catch (e: any) {
-      // If it already exists (race / pre-created), keep going.
-      if (!String(e?.message ?? '').toLowerCase().includes('exist')) throw e;
     }
   }
 
@@ -253,7 +277,7 @@ export async function ensureSchemaAndSeed(creds?: WriteCreds) {
   if (await insertIfMissing(creds2, 'site-settings', 'site-settings', 'Website-Einstellungen', {
     company_name: s.company_name, phone: s.phone, phone_href: s.phone_href, email: s.email,
     address: s.address, opening_hours: s.opening_hours, logo: s.logo ?? '',
-    social_links: s.social_links, default_seo_title: s.default_seo_title,
+    social_links: JSON.stringify(s.social_links), default_seo_title: s.default_seo_title,
     default_seo_description: s.default_seo_description, default_og_image: s.default_og_image,
   })) seeded['site-settings']++;
 
@@ -265,14 +289,14 @@ export async function ensureSchemaAndSeed(creds?: WriteCreds) {
       cta_text: p.cta_text ?? '', cta_link: p.cta_link ?? '',
       about_title: p.about_title ?? '', about_text: sanitizeHtml(p.about_text ?? ''),
       about_image_1: p.about_image_1 ?? '', about_image_2: p.about_image_2 ?? '',
-      teasers: (p.teasers ?? []).map((te) => ({ ...te, text: sanitizeHtml(te.text) })),
+      teasers: JSON.stringify((p.teasers ?? []).map((te) => ({ ...te, text: sanitizeHtml(te.text) }))),
     })) seeded.pages++;
   }
 
   for (const svc of fb.services) {
     if (await insertIfMissing(creds2, 'services', svc.slug, svc.title, {
       title: svc.title, short_description: svc.short_description,
-      description: sanitizeHtml(svc.description), benefits: svc.benefits, cta_text: svc.cta_text,
+      description: sanitizeHtml(svc.description), cta_text: svc.cta_text,
     })) seeded.services++;
   }
 
@@ -316,12 +340,12 @@ export async function persistSection(
         about_text: sanitizeHtml(data.about_text),
         about_image_1: data.about_image_1,
         about_image_2: data.about_image_2,
-        teasers: (data.teasers ?? []).map((t: any) => ({
+        teasers: JSON.stringify((data.teasers ?? []).map((t: any) => ({
           num: t.num ?? '',
           title: t.title ?? '',
           text: sanitizeHtml(t.text ?? ''),
           image: t.image ?? '',
-        })),
+        }))),
       });
       break;
     }
@@ -350,7 +374,7 @@ export async function persistSection(
         email: data.email,
         address: data.address,
         opening_hours: data.opening_hours ?? '',
-        social_links: social,
+        social_links: JSON.stringify(social),
       });
       break;
     }
