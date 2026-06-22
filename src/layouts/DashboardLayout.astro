@@ -212,7 +212,7 @@ const nav = [
           const fig = document.createElement('button');
           fig.type = 'button';
           fig.className = 'media-thumb';
-          fig.innerHTML = `<img src="${it.url}" alt="" loading="lazy">`;
+          fig.innerHTML = `<img src="${it.url}" alt="" decoding="async">`;
           fig.addEventListener('click', () => choose(it.url));
           grid!.appendChild(fig);
         });
