@@ -12,7 +12,6 @@
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.0",
     "@astrojs/sitemap": "^3.4.1",
-    "@cosmicjs/sdk": "^1.5.4",
     "astro": "^5.13.0",
     "zod": "^3.24.1"
   }

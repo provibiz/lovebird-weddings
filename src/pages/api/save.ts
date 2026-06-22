@@ -55,9 +55,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       readKey: env.COSMIC_READ_KEY,
       writeKey: env.COSMIC_WRITE_KEY,
     });
-  } catch (err) {
+  } catch (err: any) {
     return json(
-      { ok: false, error: 'Speichern bei Cosmic fehlgeschlagen. Bitte später erneut versuchen.' },
+      { ok: false, error: `Speichern bei Cosmic fehlgeschlagen: ${err?.message ?? 'unbekannter Fehler'}` },
       502
     );
   }
